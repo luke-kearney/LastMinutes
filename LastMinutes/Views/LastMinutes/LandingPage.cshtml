@@ -1,0 +1,38 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+
+<div class="col d-flex my-5 justify-content-center">
+
+
+    <div class="col-1">
+
+    </div>
+
+    <div class="col-4 p-2 text-white">
+
+
+        <h2>LastMinutes</h2>
+
+        <h5>Enter your Last.FM Username Below</h5>
+
+        <form asp-action="CheckMinutes" asp-controller="LastMinutes">
+
+            <input class="form-control" type="text" name="username" placeholder="Last.FM Username" required />
+
+            <br />
+            <div class="col-4 ms-auto d-flex justify-content-end">
+                <button type="submit" class="btn btn-outline-light mb-3">Go -></button>
+
+            </div>
+
+        </form>
+
+        
+
+    </div>
+
+</div>
