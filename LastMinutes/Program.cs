@@ -36,17 +36,19 @@ switch (DB_Type)
 
 #region Services
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
-
-
 // Add LastFM Grabber
 builder.Services.AddTransient<ILastFMGrabber, LastFMGrabber>();
 
-// Add custom queue controller
-builder.Services.AddHostedService<QueueController>();
+// Add queue manager
+builder.Services.AddTransient<IQueueManager, QueueManager>();
 
+// Add custom queue controller
+builder.Services.AddHostedService<QueueMonitor>();
+
+
+// Add services to the container.
+builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 
 #endregion
 

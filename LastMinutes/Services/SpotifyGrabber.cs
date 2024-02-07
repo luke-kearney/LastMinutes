@@ -6,21 +6,14 @@ using System.Xml.Linq;
 namespace LastMinutes.Services
 {
 
-    public interface ILastFMGrabber
+    public interface ISpotifyGrabber
     {
-
-        public string Test();
-
-        public Task<int> GetTotalPages(string username);
-
-        public Task<List<Dictionary<string, string>>> FetchScrobblesPerPage(string username, int page);
-
-        public Dictionary<(string, string), int> AccumulateTrackPlays(List<Dictionary<string, string>> AllScrobbles); 
+        
 
     }
 
 
-    public class LastFMGrabber : ILastFMGrabber
+    public class SpotifyGrabber : ISpotifyGrabber
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IConfiguration _config;
@@ -28,7 +21,7 @@ namespace LastMinutes.Services
         private string LastFMApiUrl = string.Empty;
         private string LastFMApiKey = string.Empty;
 
-        public LastFMGrabber(
+        public SpotifyGrabber(
             IServiceProvider serviceProvider,
             IConfiguration config) 
         { 
@@ -37,7 +30,6 @@ namespace LastMinutes.Services
 
             LastFMApiUrl = config.GetValue<string>("LastFMApiUrl");
             LastFMApiKey = config.GetValue<string>("LastFMApiKey");
-
         }
 
         public string Test()
