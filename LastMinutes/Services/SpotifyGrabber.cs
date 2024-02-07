@@ -98,7 +98,9 @@ namespace LastMinutes.Services
                             {
                                 Name = trackNameResult,
                                 Artist = artistNameResult,
-                                Runtime = durationMsResult
+                                Runtime = durationMsResult,
+                                Date_Added = DateTime.Now,
+                                Last_Used = DateTime.Now
                             };
 
                             _lmdata.Tracks.Add(CacheTrack);
