@@ -126,7 +126,7 @@ namespace LastMinutes.Services
             {
                 string artist = scrobble["artist"];
                 string name = scrobble["name"];
-                var key = (Artist: artist, Track: name);
+                var key = (Track: name, Artist: artist);
                 if (Output.ContainsKey(key))
                 {
                     Output[key]++;

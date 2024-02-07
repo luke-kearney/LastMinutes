@@ -1,5 +1,6 @@
 ﻿using LastMinutes.Data;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Security.Cryptography.X509Certificates;
@@ -12,12 +13,14 @@ namespace LastMinutes.Services
     {
 
         private readonly ILastFMGrabber _lastfm;
+        private readonly ISpotifyGrabber _spotify;
         private readonly IServiceProvider _serviceProvider;
 
-        public QueueMonitor(ILastFMGrabber lastfm, IServiceProvider serviceProvider)
+        public QueueMonitor(ILastFMGrabber lastfm, ISpotifyGrabber spotify, IServiceProvider serviceProvider)
         {
             _lastfm = lastfm;
             _serviceProvider = serviceProvider;
+            _spotify = spotify;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -81,20 +84,69 @@ namespace LastMinutes.Services
                         }
 
                         // Create dictionary for scrobbles with their total count 
-                        Dictionary<(string, string), int> ScrobblesAccumulatedPlays = _lastfm.AccumulateTrackPlays(AllScrobbles);
+                        Dictionary<(string trackName, string artistName), int> ScrobblesAccumulatedPlays = _lastfm.AccumulateTrackPlays(AllScrobbles);
 
                         int TotalTracks = ScrobblesAccumulatedPlays.Count();
 
                         Console.WriteLine($"[Queue] {item.Username} - Total Scrobbles: {AllScrobbles.Count().ToString()}");
                         Console.WriteLine($"[Queue] {item.Username} - Total Tracks: {ScrobblesAccumulatedPlays.Count().ToString()}");
 
-                        var SpotifyTasks = new List<Task<List<Dictionary<(string, string), int>>>>();
+                        var SpotifyTasks = new List<Task<Dictionary<(string, string), int>>>();
+                        Dictionary<(string, string), int> SpotifyMinutes = new Dictionary<(string, string), int>();
 
-                        for (int trackCounter = 0; trackCounter <= TotalTracks ; trackCounter++)
+                        string SpotifyToken = await _spotify.GetAccessToken();
+
+                        foreach (var entry in ScrobblesAccumulatedPlays)
                         {
+                            var task = _spotify.GetTrackRuntime(entry.Key.trackName, entry.Key.artistName, entry.Value, SpotifyToken);
+                            SpotifyTasks.Add(task);
                         }
 
+                        await Task.WhenAll(SpotifyTasks);
 
+                        foreach (var task in SpotifyTasks)
+                        {
+                            var runtime = await task;
+                            foreach (var kvp in runtime)
+                            {
+                                SpotifyMinutes[kvp.Key] = kvp.Value;
+                            }
+                        }
+
+                        Console.WriteLine($"[Queue] Spotify Calculated Tracks: {SpotifyMinutes.Count}");
+
+                        int TotalRuntime = 0; 
+
+                        foreach (var Song in SpotifyMinutes)
+                        {
+                            TotalRuntime += Song.Value;
+                        }
+
+                        Console.WriteLine($"[Queue] Spotify Calculated Minutes: {_spotify.ConvertMsToMinutes(TotalRuntime)} minutes ({TotalRuntime})");
+
+                        var TopTenMinutes = SpotifyMinutes
+                            .OrderByDescending(kvp => kvp.Value)
+                            .Take(10)
+                            .ToList();
+
+                        foreach (var Song in TopTenMinutes)
+                        {
+                            Console.WriteLine($"[Queue] Song: {Song.Key.Item1} by {Song.Key.Item2}, total listening time: {_spotify.ConvertMsToMinutes(Song.Value)} minutes");
+                        }
+
+                        Models.LMData.Results Result = new Models.LMData.Results()
+                        {
+                            Username = item.Username,
+                            TotalPlaytime = TotalRuntime,
+                            AllScrobbles = JsonConvert.SerializeObject(SpotifyMinutes),
+                            Created_On = DateTime.Now
+                        };
+
+                        _lmdata.Results.Add(Result);
+
+                        await _lmdata.SaveChangesAsync();
+
+                        await ClearFromQueue(item);
 
                     }
 
