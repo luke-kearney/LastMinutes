@@ -8,6 +8,13 @@ namespace LastMinutes.Services
     public class QueueController : BackgroundService
     {
 
+        private readonly ILastFMGrabber _lastfm;
+
+        public QueueController(ILastFMGrabber lastfm)
+        {
+            _lastfm = lastfm;
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
@@ -22,7 +29,7 @@ namespace LastMinutes.Services
 
         private async Task CheckDatabase()
         {
-            Console.WriteLine("[Queue] Checking Database for new requests...");
+            Console.WriteLine($"[Queue] LastFM API URL is {_lastfm.Test()}");
             await Task.Delay(TimeSpan.FromSeconds(15));
         }
 

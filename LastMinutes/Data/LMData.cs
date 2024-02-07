@@ -15,5 +15,7 @@ namespace LastMinutes.Data
         public DbSet<LastMinutes.Models.LMData.Queue> Queue { get; set; } = default!;
         public DbSet<LastMinutes.Models.LMData.Results> Results { get; set; } = default!;
 
+        public DbSet<LastMinutes.Models.LMData.Tracks> Tracks { get; set; } = default!;
+
     }
 }
