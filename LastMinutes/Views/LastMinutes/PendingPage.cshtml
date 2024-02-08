@@ -1,6 +1,7 @@
 ﻿@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
+@model LastMinutes.Models.ViewModels.PendingViewModel
 @{
 }
 
@@ -17,7 +18,14 @@
 
         <h2>LastMinutes</h2>
 
-        <p>Your minutes are still being tallied!<br />Please check back in a couple of hours...</p>
+        <h3>Hey, @Model.Username!</h3>
+        <p>
+            Your minutes are being tallied!<br /><br />
+
+            <b>ETA</b> @Model.Eta.ToString() minutes <br />
+            <b>Server is </b> @Model.ServerStatus.
+            
+        </p>
 
         
 

@@ -1,4 +1,6 @@
 ﻿using LastMinutes.Data;
+using LastMinutes.Models.LMData;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using System;
@@ -27,7 +29,7 @@ namespace LastMinutes.Services
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(TimeSpan.FromSeconds(20), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 
                 await CheckDatabase();
 
@@ -96,9 +98,18 @@ namespace LastMinutes.Services
 
                         string SpotifyToken = await _spotify.GetAccessToken();
 
+                        while (SpotifyToken == "tokenfailure")
+                        {
+                            Console.WriteLine("[Queue] Failed to retrieve Spotify access token! Trying again...");
+                            SpotifyToken = await _spotify.GetAccessToken();
+                            await Task.Delay(TimeSpan.FromSeconds(5));
+                        }
+
+                        List<Tracks> AllCachedTracks = await _lmdata.Tracks.ToListAsync();
+
                         foreach (var entry in ScrobblesAccumulatedPlays)
                         {
-                            var task = _spotify.GetTrackRuntime(entry.Key.trackName, entry.Key.artistName, entry.Value, SpotifyToken);
+                            var task = _spotify.GetTrackRuntime(entry.Key.trackName, entry.Key.artistName, entry.Value, SpotifyToken, AllCachedTracks);
                             SpotifyTasks.Add(task);
                         }
 
@@ -115,7 +126,7 @@ namespace LastMinutes.Services
 
                         Console.WriteLine($"[Queue] Spotify Calculated Tracks: {SpotifyMinutes.Count}");
 
-                        int TotalRuntime = 0; 
+                        long TotalRuntime = 0; 
 
                         foreach (var Song in SpotifyMinutes)
                         {
@@ -138,7 +149,7 @@ namespace LastMinutes.Services
                         {
                             Username = item.Username,
                             TotalPlaytime = TotalRuntime,
-                            AllScrobbles = JsonConvert.SerializeObject(SpotifyMinutes),
+                            AllScrobbles = JsonConvert.SerializeObject(SpotifyMinutes.OrderByDescending(kvp => kvp.Value).Take(25).ToList()),
                             Created_On = DateTime.Now
                         };
 

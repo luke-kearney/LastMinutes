@@ -4,7 +4,7 @@
     {
 
         public string Username { get; set; }
-        public int TotalMs { get; set; }
+        public long TotalMs { get; set; }
         public string TotalMinutes { get; set; }
 
     }

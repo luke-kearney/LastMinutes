@@ -10,13 +10,13 @@ namespace LastMinutes.Services
     public interface ISpotifyGrabber
     {
 
-        public Task<(string trackName, string artistName, int durationMs)> SearchForTrack(string trackName, string artistName, string authToken);
+        public Task<(string trackName, string artistName, int durationMs)> SearchForTrack(string trackName, string artistName, string authToken, List<Tracks> AllCached);
 
-        public Task<Dictionary<(string trackName, string artistName), int>> GetTrackRuntime(string trackName, string artistName, int count, string authToken);
+        public Task<Dictionary<(string trackName, string artistName), int>> GetTrackRuntime(string trackName, string artistName, int count, string authToken, List<Tracks> AllCached);
 
         public Task<string> GetAccessToken();
 
-        public string ConvertMsToMinutes(int durationMs);
+        public string ConvertMsToMinutes(long durationMs);
 
     }
 
@@ -31,7 +31,7 @@ namespace LastMinutes.Services
         private string SpotifyClientId = string.Empty;
         private string SpotifyClientSecret = string.Empty;
 
-        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(4);
+        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1);
 
         public SpotifyGrabber(
             IServiceProvider serviceProvider,
@@ -47,15 +47,20 @@ namespace LastMinutes.Services
         }
 
 
-        public async Task<(string trackName, string artistName, int durationMs)> SearchForTrack(string trackName, string artistName, string authToken)
+        public async Task<(string trackName, string artistName, int durationMs)> SearchForTrack(string trackName, string artistName, string authToken, List<Tracks> AllCached)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
                 LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();    
 
-                Tracks CachedTrack = _lmdata.Tracks.Where(x => x.Name == trackName && x.Artist == artistName).FirstOrDefault();
+                if (AllCached == null)
+                {
+                    AllCached = new List<Tracks>();
+                }
 
-                if (CachedTrack != null)
+                Tracks CachedTrack = AllCached.Where(x => x.Name == trackName && x.Artist == artistName).FirstOrDefault();
+
+                if (CachedTrack != null && CachedTrack.Artist != "ErrorException")
                 {
                     CachedTrack.Last_Used = DateTime.Now;
                     _lmdata.Tracks.Update(CachedTrack);
@@ -71,7 +76,7 @@ namespace LastMinutes.Services
                     string encodedArtistName = Uri.EscapeDataString(artistName);
 
 
-                    string searchUrl = $"{SpotifyApiUrl}/search?q={encodedTrackName}+artist:{encodedArtistName}&type=track&limit=1";
+                    string searchUrl = $"{SpotifyApiUrl}/search?q={encodedTrackName}+artist:{encodedArtistName}&type=track&limit=4";
 
                     httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
 
@@ -115,6 +120,17 @@ namespace LastMinutes.Services
                     }
                     else
                     {
+                        
+                        Console.WriteLine($"[Spotify] Error occurred while asking Spotify about '{trackName}' by {artistName}..");
+                        Console.WriteLine($"[Spotify] Error is {response.StatusCode}" );
+
+                        if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                        {
+                            string retryAfterHeader = response.Headers.GetValues("Retry-After").FirstOrDefault() ?? "25";
+                            Console.WriteLine($"[Spotify] Pausing for {retryAfterHeader} seconds.");
+                            await Task.Delay(TimeSpan.FromSeconds(Int32.Parse(retryAfterHeader)));
+                        }
+
                         return ("TrackNotFound", "ErrorException", 0);
                     }
                 }
@@ -126,12 +142,12 @@ namespace LastMinutes.Services
         }
 
 
-        public async Task<Dictionary<(string, string), int>> GetTrackRuntime(string trackName, string artistName, int count, string authToken)
+        public async Task<Dictionary<(string, string), int>> GetTrackRuntime(string trackName, string artistName, int count, string authToken, List<Tracks> AllCached)
         {
             await semaphoreSlim.WaitAsync();
             try
             {
-                var (t, a, ms) = await SearchForTrack(trackName, artistName, authToken);
+                var (t, a, ms) = await SearchForTrack(trackName, artistName, authToken, AllCached);
                 var runtime = new Dictionary<(string trackName, string artistName), int>();
 
                 Console.WriteLine($"[Spotify] Found track '{t}' by '{a}' with an ms runtime of {ms.ToString()}");
@@ -211,10 +227,10 @@ namespace LastMinutes.Services
         }
 
 
-        public string ConvertMsToMinutes(int durationMs)
+        public string ConvertMsToMinutes(long durationMs)
         {
             // Convert milliseconds to minutes
-            int totalMinutes = durationMs / (1000 * 60);
+            long totalMinutes = durationMs / (1000 * 60);
 
             // Return the result as a string
             return totalMinutes.ToString();

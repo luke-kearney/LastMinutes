@@ -34,16 +34,25 @@ namespace LastMinutes.Controllers
             return View("LandingPage");
         }
 
-
-        [HttpPost]
-        [Route("/LastMinutes/CheckMinutes")]
-        public async Task<IActionResult> CheckMinutes(IFormCollection col)
+        [Route("/results/{Username}")]
+        public async Task<IActionResult> ResultsIndex(string Username)
         {
-            string Username = col["username"].ToString();  
-            if (string.IsNullOrEmpty(Username) ) { return Content("No Username Supplied!"); }
+            if (string.IsNullOrEmpty(Username)) { return Content("Error, no username supplied!"); }
 
             bool IsInQueue = await _queue.InQueue(Username);
             bool IsFinished = await _queue.IsFinished(Username);
+
+            if (IsInQueue)
+            {
+                PendingViewModel spvm = new PendingViewModel()
+                {
+                    Username = Username,
+                    Eta = _queue.GetEta(),
+                    EtaWords = _queue.ConvertMinutesToWordsLong(_queue.GetEta()),
+                    ServerStatus = _queue.Busy()
+                };
+                return View("PendingPage");
+            }
 
             if (IsFinished)
             {
@@ -63,19 +72,87 @@ namespace LastMinutes.Controllers
                 return View("ResultsPage", vm);
             }
 
+
+            // Does not exist, go to creation page
+            return RedirectToAction("Index", "LastMinutes");
+
+        }
+
+
+        [Route("/refresh/{Username}")]
+        public async Task<IActionResult> Refresh(string Username)
+        {
+            if (string.IsNullOrEmpty(Username)) { return Content("Error, no username supplied!"); }
+
+            bool IsInQueue = await _queue.InQueue(Username);
+            bool IsFinished = await _queue.IsFinished(Username);
+
+            if (IsFinished)
+            {
+                // purge results and requeu 
+                if (await _queue.RemoveResults(Username))
+                {
+                    // results removed, now requeue
+                    if (await _queue.AddUsernameToQueue(Username))
+                    {
+                        return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = Username });
+                    }
+                }
+
+                return Content("Something went wrong while removing or requeuing your username. Please try again or contact us.");
+            }
+
             if (IsInQueue)
             {
-                return View("PendingPage");
+                return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = Username });
+            }
+
+
+            return RedirectToAction("Index", "LastMinutes");
+            
+
+        }
+
+
+
+        [HttpPost]
+        [Route("/LastMinutes/CheckMinutes")]
+        public async Task<IActionResult> CheckMinutes(IFormCollection col)
+        {
+            string Username = col["username"].ToString();  
+            if (string.IsNullOrEmpty(Username) ) { return Content("No Username Supplied!"); }
+
+            bool IsInQueue = await _queue.InQueue(Username);
+            bool IsFinished = await _queue.IsFinished(Username);
+
+            if (IsFinished)
+            {
+                return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = Username });
+            }
+
+            PendingViewModel spvm = new PendingViewModel()
+            {
+                Username = Username,
+                Eta = _queue.GetEta(),
+                EtaWords = _queue.ConvertMinutesToWordsLong(_queue.GetEta()),
+                ServerStatus = _queue.Busy()
+            };
+
+
+            if (IsInQueue)
+            {
+                return View("PendingPage", spvm);
             }
 
             
             if (await _queue.AddUsernameToQueue(Username))
             {
-                return View("AddedPage");
-            } else
-            {
-                return Content("Something went wrong, please try again.");
-            }
+                return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = Username });
+            } 
+            
+            
+            return Content("Something went wrong, please try again.");
+            
 
            
         }

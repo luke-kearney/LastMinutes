@@ -10,7 +10,7 @@ namespace LastMinutes.Models.LMData
 
         public string Username { get; set; } = string.Empty;
 
-        public int TotalPlaytime { get; set; }
+        public long TotalPlaytime { get; set; }
 
         public string AllScrobbles { get; set; } = string.Empty;
 
