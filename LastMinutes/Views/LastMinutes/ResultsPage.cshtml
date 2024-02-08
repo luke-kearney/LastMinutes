@@ -6,26 +6,24 @@
 }
 
 
-<div class="col d-flex my-5 justify-content-center">
+<div class="col d-flex justify-content-center">
 
 
-    <div class="col-1">
-
-    </div>
 
     <div class="col-4 p-2 text-white">
 
+        <h5>@Html.Raw("@")@Model.Username</h5>
+        <br /><br />
 
-        <h2>LastMinutes</h2>
 
-        <h5>@Model.Username</h5>
+        <h6>You have listened to</h6>
+        <h3 class="my-1 mt-0 pt-0">@Model.TotalMinutes minutes</h3>
 
-        <p>You have listened to</p>
+        <p>This was over a period of <b>all time</b>.</p>
 
-        <h3>@Model.TotalMinutes minutes</h3>
-        
-        <p>(over all time)</p>
+        <br /><br /><br />
 
+        <p><a asp-action="Refresh" asp-controller="LastMinutes" asp-route-Username="@Model.Username">Click here to refresh..</a></p>
     </div>
 
 </div>

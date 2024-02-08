@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace LastMinutes.Migrations
 {
-    public partial class InitialCreate : Migration
+    public partial class Initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -31,7 +31,7 @@ namespace LastMinutes.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Username = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TotalPlaytime = table.Column<int>(type: "int", nullable: false),
+                    TotalPlaytime = table.Column<long>(type: "bigint", nullable: false),
                     AllScrobbles = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Created_On = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },

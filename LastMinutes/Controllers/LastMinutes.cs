@@ -51,7 +51,7 @@ namespace LastMinutes.Controllers
                     EtaWords = _queue.ConvertMinutesToWordsLong(_queue.GetEta()),
                     ServerStatus = _queue.Busy()
                 };
-                return View("PendingPage");
+                return View("PendingPage", spvm);
             }
 
             if (IsFinished)
@@ -141,10 +141,10 @@ namespace LastMinutes.Controllers
 
             if (IsInQueue)
             {
-                return View("PendingPage", spvm);
+                return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = Username }); 
             }
 
-            
+
             if (await _queue.AddUsernameToQueue(Username))
             {
                 return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = Username });

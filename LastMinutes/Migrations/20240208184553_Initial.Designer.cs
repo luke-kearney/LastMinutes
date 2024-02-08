@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LastMinutes.Migrations
 {
     [DbContext(typeof(LMData))]
-    [Migration("20240207174403_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20240208184553_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -62,8 +62,8 @@ namespace LastMinutes.Migrations
                     b.Property<DateTime>("Created_On")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("TotalPlaytime")
-                        .HasColumnType("int");
+                    b.Property<long>("TotalPlaytime")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Username")
                         .IsRequired()

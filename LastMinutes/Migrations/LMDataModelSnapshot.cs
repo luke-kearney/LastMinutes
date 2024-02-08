@@ -60,8 +60,8 @@ namespace LastMinutes.Migrations
                     b.Property<DateTime>("Created_On")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("TotalPlaytime")
-                        .HasColumnType("int");
+                    b.Property<long>("TotalPlaytime")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Username")
                         .IsRequired()

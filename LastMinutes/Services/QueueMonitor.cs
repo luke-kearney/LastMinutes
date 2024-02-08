@@ -1,4 +1,5 @@
 ﻿using LastMinutes.Data;
+using LastMinutes.Models;
 using LastMinutes.Models.LMData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -79,6 +80,7 @@ namespace LastMinutes.Services
                                         Console.WriteLine("[Queue] There was a request error to Last.FM. Some scrobbles may be missing!");
                                     }
                                 }
+                                Console.WriteLine($"[Queue] Loaded Last.FM up to pages {page.ToString()}/{TotalLastFmPages.ToString()}");
 
                                 tasks.Clear();
 
@@ -123,6 +125,21 @@ namespace LastMinutes.Services
                                 SpotifyMinutes[kvp.Key] = kvp.Value;
                             }
                         }
+
+                        // Sort through all spotify tracks and pick out those with no runtime
+                       /* List<BadScrobbles> badScrobbles = new List<BadScrobbles>();
+
+                        foreach (var spotScrob in SpotifyMinutes)
+                        {
+                            if (spotScrob.Value == 0)
+                            {
+                                badScrobbles.Add(new BadScrobbles()
+                                {
+                                    ArtistName = spotScrob.Key.Item2,
+                                    TrackName = spotScrob 
+                                });
+                            }
+                        }*/
 
                         Console.WriteLine($"[Queue] Spotify Calculated Tracks: {SpotifyMinutes.Count}");
 

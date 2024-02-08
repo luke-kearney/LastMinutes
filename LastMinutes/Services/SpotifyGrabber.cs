@@ -1,5 +1,6 @@
 ﻿using LastMinutes.Data;
 using LastMinutes.Models.LMData;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Text;
 using System.Xml.Linq;
@@ -58,9 +59,10 @@ namespace LastMinutes.Services
                     AllCached = new List<Tracks>();
                 }
 
-                Tracks CachedTrack = AllCached.Where(x => x.Name == trackName && x.Artist == artistName).FirstOrDefault();
+                //Tracks CachedTrack = _lmdata.Tracks.Where(x => x.Name == trackName && x.Artist == artistName).FirstOrDefault();
+                Tracks CachedTrack = await _lmdata.Tracks.FirstOrDefaultAsync(x => x.Name == trackName && x.Artist == artistName);
 
-                if (CachedTrack != null && CachedTrack.Artist != "ErrorException")
+                if (CachedTrack != null)
                 {
                     CachedTrack.Last_Used = DateTime.Now;
                     _lmdata.Tracks.Update(CachedTrack);
@@ -94,24 +96,31 @@ namespace LastMinutes.Services
 
                         if (responseObject.Tracks.Items.Count() != 0)
                         {
-                            var track = responseObject.Tracks.Items[0];
-                            string trackNameResult = track.Name;
-                            string artistNameResult = track.Artists[0].Name;
-                            int durationMsResult = track.duration_ms;
-
-                            Tracks CacheTrack = new Tracks()
+                            try
                             {
-                                Name = trackNameResult,
-                                Artist = artistNameResult,
-                                Runtime = durationMsResult,
-                                Date_Added = DateTime.Now,
-                                Last_Used = DateTime.Now
-                            };
+                                var track = responseObject.Tracks.Items[0];
+                                string trackNameResult = track.Name;
+                                string artistNameResult = track.Artists[0].Name;
+                                int durationMsResult = track.duration_ms;
 
-                            _lmdata.Tracks.Add(CacheTrack);
-                            await _lmdata.SaveChangesAsync();
+                                Tracks CacheTrack = new Tracks()
+                                {
+                                    Name = trackName,
+                                    Artist = artistName,
+                                    Runtime = durationMsResult,
+                                    Date_Added = DateTime.Now,
+                                    Last_Used = DateTime.Now
+                                };
 
-                            return (trackNameResult, artistNameResult, durationMsResult, false);
+                                _lmdata.Tracks.Add(CacheTrack);
+                                await _lmdata.SaveChangesAsync();
+
+                                return (trackNameResult, artistNameResult, durationMsResult, false);
+                            } catch
+                            {
+                                return (trackName, artistName, 0, false);
+                            }
+
                         }
                         else
                         {
