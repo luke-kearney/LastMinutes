@@ -10,7 +10,7 @@ namespace LastMinutes.Services
     public interface ISpotifyGrabber
     {
 
-        public Task<(string trackName, string artistName, int durationMs)> SearchForTrack(string trackName, string artistName, string authToken, List<Tracks> AllCached);
+        public Task<(string trackName, string artistName, int durationMs, bool Cached)> SearchForTrack(string trackName, string artistName, string authToken, List<Tracks> AllCached);
 
         public Task<Dictionary<(string trackName, string artistName), int>> GetTrackRuntime(string trackName, string artistName, int count, string authToken, List<Tracks> AllCached);
 
@@ -31,7 +31,7 @@ namespace LastMinutes.Services
         private string SpotifyClientId = string.Empty;
         private string SpotifyClientSecret = string.Empty;
 
-        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(2);
 
         public SpotifyGrabber(
             IServiceProvider serviceProvider,
@@ -47,7 +47,7 @@ namespace LastMinutes.Services
         }
 
 
-        public async Task<(string trackName, string artistName, int durationMs)> SearchForTrack(string trackName, string artistName, string authToken, List<Tracks> AllCached)
+        public async Task<(string trackName, string artistName, int durationMs, bool Cached)> SearchForTrack(string trackName, string artistName, string authToken, List<Tracks> AllCached)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
@@ -66,7 +66,7 @@ namespace LastMinutes.Services
                     _lmdata.Tracks.Update(CachedTrack);
                     await _lmdata.SaveChangesAsync();
 
-                    return (CachedTrack.Name, CachedTrack.Artist, CachedTrack.Runtime);
+                    return (CachedTrack.Name, CachedTrack.Artist, CachedTrack.Runtime, true);
 
                 } else
                 {
@@ -89,7 +89,7 @@ namespace LastMinutes.Services
 
                         if (responseObject == null)
                         {
-                            return (trackName, artistName, 0);
+                            return (trackName, artistName, 0, false);
                         }
 
                         if (responseObject.Tracks.Items.Count() != 0)
@@ -111,11 +111,11 @@ namespace LastMinutes.Services
                             _lmdata.Tracks.Add(CacheTrack);
                             await _lmdata.SaveChangesAsync();
 
-                            return (trackNameResult, artistNameResult, durationMsResult);
+                            return (trackNameResult, artistNameResult, durationMsResult, false);
                         }
                         else
                         {
-                            return (trackName, artistName, 0);
+                            return (trackName, artistName, 0, false);
                         }
                     }
                     else
@@ -124,14 +124,16 @@ namespace LastMinutes.Services
                         Console.WriteLine($"[Spotify] Error occurred while asking Spotify about '{trackName}' by {artistName}..");
                         Console.WriteLine($"[Spotify] Error is {response.StatusCode}" );
 
+                        // if the response is TooManyRequests, retrieve the cool-down time and wait for that amount before returning an empty/exception variable.
                         if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                         {
-                            string retryAfterHeader = response.Headers.GetValues("Retry-After").FirstOrDefault() ?? "25";
+                            string retryAfterHeader = response.Headers.GetValues("Retry-After").FirstOrDefault() ?? "30";
                             Console.WriteLine($"[Spotify] Pausing for {retryAfterHeader} seconds.");
                             await Task.Delay(TimeSpan.FromSeconds(Int32.Parse(retryAfterHeader)));
+                            return ("SpotifyRateLimitHit", "ErrorException", 0, false);
                         }
 
-                        return ("TrackNotFound", "ErrorException", 0);
+                        return ("UnknownResponseError", "ErrorException", 0, false);
                     }
                 }
 
@@ -147,10 +149,24 @@ namespace LastMinutes.Services
             await semaphoreSlim.WaitAsync();
             try
             {
-                var (t, a, ms) = await SearchForTrack(trackName, artistName, authToken, AllCached);
+                var (t, a, ms, ch) = await SearchForTrack(trackName, artistName, authToken, AllCached);
+
+                // If the rate limit is hit, run the track request that hit it one more time so that no track is excluded.
+                while (t == "SpotifyRateLimitHit" && a == "ErrorException")
+                {
+                    (t, a, ms, ch) = await SearchForTrack(trackName, artistName, authToken, AllCached);
+                }
+
                 var runtime = new Dictionary<(string trackName, string artistName), int>();
 
-                Console.WriteLine($"[Spotify] Found track '{t}' by '{a}' with an ms runtime of {ms.ToString()}");
+                // Check if the track data was retrieved from Spotify or from the DB cache.
+                if (ch)
+                {
+                    Console.WriteLine($"[Spotify] Found a cached track '{t}' by '{a}' with an ms runtime of {ms.ToString()}");
+                } else
+                {
+                    Console.WriteLine($"[Spotify] Found a new track '{t}' by '{a}' with an ms runtime of {ms.ToString()}");
+                }
 
                 runtime.Add((t, a), ms * count);
 
