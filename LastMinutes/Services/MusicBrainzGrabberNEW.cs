@@ -2,6 +2,7 @@
 using LastMinutes.Models;
 using LastMinutes.Models.Deezer;
 using LastMinutes.Models.LMData;
+using LastMinutes.Models.MusicBrainz;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Text;
@@ -11,36 +12,39 @@ using System.Xml.Linq;
 namespace LastMinutes.Services
 {
 
-    public interface IDeezerGrabber
+    public interface IMusicBrainz
     {
 
-        public Task<Scrobble> GetScrobbleData(Scrobble ScrobbleIn);
-        public Task<(string trackName, string artistName, int durationMs)> SearchForTrack(string trackName, string artistName);
+        public Task<Scrobble> GetData(Scrobble ScrobbleIn);
+        public Task<(string trackName, string artistName, int durationMs)> GetScrobbleData(string trackName, string artistName);
 
     }
 
 
-    public class DeezerGrabber : IDeezerGrabber
+    public class MusicBrainz : IMusicBrainz
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IConfiguration _config;
 
-        private string DeezerApiUrl = string.Empty;
 
-        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(4);
+        private string MusicBrainzApiUrl = string.Empty;
+        private string MusicBrainzUserAgent = string.Empty;
 
-        public DeezerGrabber(
+        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1);
+
+        public MusicBrainz(
             IServiceProvider serviceProvider,
             IConfiguration config) 
         { 
             _serviceProvider = serviceProvider;
             _config = config;
 
-            DeezerApiUrl = config.GetValue<string>("DeezerApiUrl");
+            MusicBrainzApiUrl = config.GetValue<string>("MusicBrainzApiUrl");
+            MusicBrainzUserAgent = config.GetValue<string>("MusicBrainzUserAgent");
         }
 
 
-        public async Task<(string trackName, string artistName, int durationMs)> SearchForTrack(string trackName, string artistName)
+        public async Task<(string trackName, string artistName, int durationMs)> GetScrobbleData(string trackName, string artistName)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
@@ -48,47 +52,42 @@ namespace LastMinutes.Services
 
                 HttpClient httpClient = new HttpClient();
 
-                string encodedTrackName = Uri.EscapeDataString(CleanSongName(Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(trackName))));
+                string encodedTrackName = Uri.EscapeDataString(CleanSongName(trackName));
                 string encodedArtistName = Uri.EscapeDataString(artistName);
-                
+                int responseMinScore = 100;
+                int responseLimit = 1;
 
-                string searchUrl = $"{DeezerApiUrl}/search?q=artist:\"{encodedArtistName}\"track:\"{encodedTrackName}\"&limit=6";
-
-                /*if (artistName == "Rammstein")
-                {
-                    Console.WriteLine($"[DEBUG] The track name is {Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(trackName))}");
-                    Console.WriteLine($"[DEBUG] Searching RAMMSTIEN: URL: {searchUrl}");
-                }*/
+                string searchUrl = $"{MusicBrainzApiUrl}/recording?query=artist:\"{encodedArtistName}\" AND recording:\"{encodedTrackName}\"&min-score={responseMinScore}&limit={responseLimit}&fmt=json";
 
                 HttpResponseMessage response = await httpClient.GetAsync(searchUrl);
 
                 if (response.IsSuccessStatusCode)
                 {
                     string responseBody = await response.Content.ReadAsStringAsync();
-                    var responseObject = JsonConvert.DeserializeObject<DeezerSearchResponse>(responseBody);
+                    var responseObject = JsonConvert.DeserializeObject<MusicBrainsResponseRoot>(responseBody);
 
                     if (responseObject == null)
                     {
                         return (trackName, artistName, 0);
                     }
 
-                    if (responseObject.Tracks == null)
+                    if (responseObject.recordings == null)
                     {
                         return (trackName, artistName, 0);
                     }
 
-                    if (responseObject.Tracks.Count != 0)
+                    if (responseObject.recordings.Count != 0)
                     {
                         try
                         {
-                            int StartIndex = 0;
-                            var track = responseObject.Tracks[StartIndex];
-                            int NameSimilarity = CompareStrings(track.Artist.Name.ToUpper(), artistName.ToUpper());
+                            /*int StartIndex = 0;
+                            var track = responseObject.recordings[StartIndex];
+                            int NameSimilarity = CompareStrings(track.artist_credit.Name.ToUpper(), artistName.ToUpper());
 
                             while (NameSimilarity < 37)
                             {
                                 StartIndex++;
-                                track = responseObject.Tracks[StartIndex];
+                                track = responseObject.recordings[StartIndex];
                                 NameSimilarity = CompareStrings(track.Artist.Name.ToUpper(), artistName.ToUpper());
                             }
 
@@ -112,8 +111,8 @@ namespace LastMinutes.Services
                                 Console.WriteLine($"[Deezer] Search Term: '{trackName}' by '{artistName}'");
                                 Console.WriteLine($"[Cache]  Track Added: '{track.Title}' by '{track.Artist.Name}', runtime '{durationMsResult}'");
                             }
-
-                            return (trackNameResult, artistNameResult, durationMsResult);
+                            */
+                            return ("", "", 2);
                         }
                         catch
                         {
@@ -142,18 +141,18 @@ namespace LastMinutes.Services
         }
 
 
-        public async Task<Scrobble> GetScrobbleData(Scrobble ScrobbleIn)
+        public async Task<Scrobble> GetData(Scrobble ScrobbleIn)
         {
             await semaphoreSlim.WaitAsync();
             try
             {
-                var (t, a, ms) = await SearchForTrack(ScrobbleIn.TrackName, ScrobbleIn.ArtistName);
+                var (t, a, ms) = await GetScrobbleData(ScrobbleIn.TrackName, ScrobbleIn.ArtistName);
 
                 // If the rate limit is hit, run the track request that hit it one more time so that no track is excluded.
                 while (t == "UnknownResponseError" && a == "ErrorException")
                 {
                     await Task.Delay(TimeSpan.FromSeconds(5));
-                    (t, a, ms) = await SearchForTrack(ScrobbleIn.TrackName, ScrobbleIn.ArtistName);
+                    (t, a, ms) = await GetScrobbleData(ScrobbleIn.TrackName, ScrobbleIn.ArtistName);
                 }
 
                 if (ms != 0)

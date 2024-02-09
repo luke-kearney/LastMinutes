@@ -73,8 +73,10 @@ namespace LastMinutes.Services
 
                         if (nameElement != null)
                         {
-                            byte[] bytes = Encoding.GetEncoding("ISO-8859-1").GetBytes(nameElement.Value);
-                            name = Encoding.UTF8.GetString(bytes);
+                            //byte[] bytes = Encoding.GetEncoding("ISO-8859-1").GetBytes(nameElement.Value);
+                            //name = Encoding.UTF8.GetString(bytes);
+
+                            name = nameElement.Value;
                         } else
                         {
                             name = string.Empty;

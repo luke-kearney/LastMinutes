@@ -96,9 +96,11 @@ namespace LastMinutes.Services
                             };
 
                             _lmdata.Tracks.Add(CacheTrack);
-                            if (await _lmdata.SaveChangesAsync() > 1)
+                            if (await _lmdata.SaveChangesAsync() > 0)
                             {
-                                Console.WriteLine($"[Cache] New item added: '{trackName}' by '{artistName}', runtime '{durationMsResult}'");
+                                Console.WriteLine($"[Cache] New item added: '{trackNameResult}' by '{artistNameResult}', runtime '{durationMsResult}'");
+                                Console.WriteLine($"[Cache] Search Term Wa: '{trackName}' by '{artistName}', runtime '{durationMsResult}'");
+                                Console.WriteLine("");
                             }
 
                             return (trackNameResult, artistNameResult, durationMsResult);
@@ -156,7 +158,7 @@ namespace LastMinutes.Services
 
                 // Check if the track data was retrieved from Spotify or from the DB cache.
                 
-                Console.WriteLine($"[Spotify] Found a new track '{t}' by '{a}' with an ms runtime of {ms.ToString()}");
+                //Console.WriteLine($"[Spotify] Found a new track '{t}' by '{a}' with an ms runtime of {ms.ToString()}");
 
                 ScrobbleIn.Runtime = ms;
                 ScrobbleIn.TotalRuntime = ms * ScrobbleIn.Count;

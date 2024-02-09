@@ -36,6 +36,10 @@ namespace LastMinutes.Services
             {
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 
+               /* string Token = await _spotify.GetAccessToken();
+
+                Console.WriteLine($"[Debug] Token: {Token}");*/
+
                 await CheckDatabase();
                 // await TestingMB();
                
@@ -192,9 +196,8 @@ namespace LastMinutes.Services
 
 
                         //Get Spotify auth token
-
                         #region Spotify Auth Token
-                        /*
+                        
                         string SpotifyAuthToken = await _spotify.GetAccessToken();
                         while (SpotifyAuthToken == "tokenfailure")
                         {
@@ -228,7 +231,7 @@ namespace LastMinutes.Services
 
                         Console.WriteLine($"[Queue] Spotify search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
                         await Task.Delay(TimeSpan.FromSeconds(10));
-                        */
+                        
                         #endregion
 
 

@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 using System.Text;
 using System.Xml.Linq;
 
-namespace LastMinutes.Services
+namespace LastMinutes.Services.Old
 {
 
     public interface IMusicBrainz
