@@ -36,9 +36,10 @@ switch (DB_Type)
 
 #region Services
 
-// Add LastFM Grabber
+// Add Data Grabbers
 builder.Services.AddTransient<ILastFMGrabber, LastFMGrabber>();
 builder.Services.AddTransient<ISpotifyGrabber, SpotifyGrabber>();
+builder.Services.AddTransient<IMusicBrainz, MusicBrainz>();
 
 // Add queue manager
 builder.Services.AddTransient<IQueueManager, QueueManager>();

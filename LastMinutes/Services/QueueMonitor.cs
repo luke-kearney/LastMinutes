@@ -17,13 +17,15 @@ namespace LastMinutes.Services
 
         private readonly ILastFMGrabber _lastfm;
         private readonly ISpotifyGrabber _spotify;
+        private readonly IMusicBrainz _mb;
         private readonly IServiceProvider _serviceProvider;
 
-        public QueueMonitor(ILastFMGrabber lastfm, ISpotifyGrabber spotify, IServiceProvider serviceProvider)
+        public QueueMonitor(ILastFMGrabber lastfm, ISpotifyGrabber spotify, IServiceProvider serviceProvider, IMusicBrainz mb)
         {
             _lastfm = lastfm;
             _serviceProvider = serviceProvider;
             _spotify = spotify;
+            _mb = mb;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -32,9 +34,68 @@ namespace LastMinutes.Services
             {
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 
-                await CheckDatabase();
-
+                //await CheckDatabase();
+                await TestingMB();
             }
+        }
+
+
+        private async Task TestingMB()
+        {
+            List<Scrobble> AccumulatedScrobbles = new List<Scrobble>();
+
+            AccumulatedScrobbles.Add(new Scrobble()
+            {
+                TrackName = "Come With Me Now",
+                ArtistName = "Kongos",
+                Count = 5
+            });
+
+            AccumulatedScrobbles.Add(new Scrobble()
+            {
+                TrackName = "Addams Groove",
+                ArtistName = "MC Hammer",
+                Count = 3
+            });
+
+            AccumulatedScrobbles.Add(new Scrobble()
+            {
+                TrackName = "The Bay",
+                ArtistName = "Metronomy",
+                Count = 25
+            });
+
+            AccumulatedScrobbles.Add(new Scrobble()
+            {
+                TrackName = "Mezmer",
+                ArtistName = "Pinkly Smooth",
+                Count = 25
+            });
+
+            List<Scrobble> ProcessedScrobbles = new List<Scrobble>();
+
+            var MusicBrainzTasks = new List<Task<Scrobble>>();
+
+            foreach (Scrobble item in AccumulatedScrobbles)
+            {
+                var task = _mb.GetScrobbleData(item.TrackName, item.ArtistName, item.Count);
+                MusicBrainzTasks.Add(task);
+            }
+
+            await Task.WhenAll(MusicBrainzTasks);
+
+            foreach (var task in MusicBrainzTasks)
+            {
+                Scrobble result = await task;
+                ProcessedScrobbles.Add(result);
+            }
+
+            foreach (Scrobble item in ProcessedScrobbles)
+            {
+                Console.WriteLine("");
+                Console.WriteLine($"[Queue] Data in on '{item.TrackName}' by '{item.ArtistName}', C: {item.Count}, R: {item.Runtime}, TR: {item.TotalRuntime}");
+            }
+
         }
 
 
