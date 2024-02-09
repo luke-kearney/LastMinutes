@@ -13,7 +13,7 @@ namespace LastMinutes.Services
     public interface IMusicBrainz
     {
 
-        public Task<Scrobble> GetScrobbleData(string trackName, string artistName, int totalScrobbles);
+        public Task<Scrobble> GetScrobbleData(Scrobble ScrobbleIn);
 
     }
 
@@ -58,18 +58,19 @@ namespace LastMinutes.Services
             {
                 string responseBody = await response.Content.ReadAsStringAsync();
                 MusicBrainsResponseRoot mbData = JsonConvert.DeserializeObject<MusicBrainsResponseRoot>(responseBody) ?? new MusicBrainsResponseRoot() { success = false, errorMessage = "responseEmpty" };
-                
+
+                await Task.Delay(TimeSpan.FromSeconds(1));
                 return mbData;
 
             } else
             {
-                return new MusicBrainsResponseRoot() { success = false, errorMessage = "requestFailed" };
+                return new MusicBrainsResponseRoot() { success = false, errorMessage = response.StatusCode.ToString() };
             }
 
         }
 
 
-        public async Task<Scrobble> GetScrobbleData(string trackName, string artistName, int totalScrobbles)
+        public async Task<Scrobble> GetScrobbleData(Scrobble ScrobbleIn)
         {
             await semaphoreSlim.WaitAsync();
 
@@ -79,70 +80,54 @@ namespace LastMinutes.Services
                 {
                     LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
 
-                    Tracks cachedTrack = await _lmdata.Tracks.FirstOrDefaultAsync(x => x.Name == trackName && x.Artist == artistName);
 
-                    if (cachedTrack != null)
+                    MusicBrainsResponseRoot mbResponse = await GetData(ScrobbleIn.TrackName, ScrobbleIn.ArtistName);
+                    while (!mbResponse.success)
                     {
-                        Console.WriteLine($"[MusicBrainz] Found cached track '{trackName}' by '{artistName}' with a runtime of '{cachedTrack.Runtime}'");
-
-                        return new Scrobble()
-                        {
-                            TrackName = trackName,
-                            ArtistName = artistName,
-                            Count = totalScrobbles,
-                            Runtime = cachedTrack.Runtime,
-                            TotalRuntime = cachedTrack.Runtime * totalScrobbles
-                        };
-
-                    } else
-                    {
-                        MusicBrainsResponseRoot mbResponse = await GetData(trackName, artistName);
-                        while (!mbResponse.success)
-                        {
-                            mbResponse = await GetData(trackName, artistName);
-                        }
-                        
-
-                        if (mbResponse != null)
-                        {
-                            int TrackRuntime = mbResponse.recordings[0].length;
-                            // cache track here
-                            if (TrackRuntime != 0)
-                            {
-                                _lmdata.Tracks.Add(new Tracks()
-                                {
-                                    Name = trackName,
-                                    Artist = artistName,
-                                    Runtime = TrackRuntime,
-                                    Date_Added = DateTime.Now,
-                                    Last_Used = DateTime.Now
-                                });
-                            }
-
-                            Console.WriteLine($"[MusicBrainz] Found a new track '{trackName}' by '{artistName}' with a runtime of '{TrackRuntime}'");
-                            return new Scrobble()
-                            {
-                                TrackName = trackName,
-                                ArtistName = artistName,
-                                Count = totalScrobbles,
-                                Runtime = TrackRuntime,
-                                TotalRuntime = TrackRuntime * totalScrobbles
-                            };
-                        }
-                        else
-                        {
-                            Console.WriteLine($"[MusicBrainz] Something went wrong when asking MusicBrainz about '{trackName}' by '{artistName}'");
-                            return new Scrobble() 
-                            { 
-                                TrackName = trackName,
-                                ArtistName = artistName,
-                                Count = totalScrobbles,
-                                Runtime = 0,
-                                TotalRuntime = 0
-                            };
-                        }
+                        Console.WriteLine($"[MusicBrainz] Error: {mbResponse.errorMessage}");
+                        mbResponse = await GetData(ScrobbleIn.TrackName, ScrobbleIn.ArtistName);
                     }
 
+                    
+
+                    if (mbResponse != null)
+                    {
+                        int TrackRuntime = 0;
+                        if (mbResponse.recordings != null)
+                        {
+                            if (mbResponse.recordings.Count != 0)
+                            {
+                                TrackRuntime = mbResponse.recordings[0].length;
+                            }
+                        }
+                        // cache track here
+                        if (TrackRuntime != 0)
+                        {
+                            _lmdata.Tracks.Add(new Tracks()
+                            {
+                                Name = ScrobbleIn.TrackName,
+                                Artist = ScrobbleIn.ArtistName,
+                                Runtime = TrackRuntime,
+                                Date_Added = DateTime.Now,
+                                Last_Used = DateTime.Now
+                            });
+                            if (await _lmdata.SaveChangesAsync() > 0)
+                            {
+                                Console.WriteLine($"[Cache] New item added: '{ScrobbleIn.TrackName}' by '{ScrobbleIn.ArtistName}', runtime '{TrackRuntime}'");
+                            }
+                        }
+
+                        Console.WriteLine($"[MusicBrainz] Found a new track '{ScrobbleIn.TrackName}' by '{ScrobbleIn.ArtistName}' with a runtime of '{TrackRuntime}'");
+                        ScrobbleIn.Runtime = TrackRuntime;
+                        ScrobbleIn.TotalRuntime = TrackRuntime * ScrobbleIn.Count;
+                        return ScrobbleIn;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[MusicBrainz] Something went wrong when asking MusicBrainz about '{ScrobbleIn.TrackName}' by '{ScrobbleIn.ArtistName}'");
+                        return ScrobbleIn;
+
+                    }
                 }
             }
 

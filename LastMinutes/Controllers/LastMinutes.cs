@@ -12,6 +12,7 @@ using LastMinutes.Services;
 using LastMinutes.Models.ViewModels;
 using LastMinutes.Data;
 using Microsoft.EntityFrameworkCore;
+using LastMinutes.Models.LMData;
 
 namespace LastMinutes.Controllers
 {
@@ -32,6 +33,19 @@ namespace LastMinutes.Controllers
         public IActionResult Index()
         {
             return View("LandingPage");
+        }
+
+        [Route("faq")]
+        public async Task<IActionResult> Faq()
+        {
+            List<Tracks> AllCached = await _lmdata.Tracks.ToListAsync();
+            int TotalCached = AllCached.Count;
+            FaqViewModel vm = new FaqViewModel()
+            {
+                TotalCachedTracks = TotalCached,
+            };
+            
+            return View("FaqPage", vm);
         }
 
         [Route("/results/{Username}")]

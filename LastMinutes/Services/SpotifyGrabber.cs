@@ -1,4 +1,5 @@
 ﻿using LastMinutes.Data;
+using LastMinutes.Models;
 using LastMinutes.Models.LMData;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -11,9 +12,9 @@ namespace LastMinutes.Services
     public interface ISpotifyGrabber
     {
 
-        public Task<(string trackName, string artistName, int durationMs, bool Cached)> SearchForTrack(string trackName, string artistName, string authToken, List<Tracks> AllCached);
+        public Task<(string trackName, string artistName, int durationMs)> SearchForTrack(string trackName, string artistName, string authToken);
 
-        public Task<Dictionary<(string trackName, string artistName), int>> GetTrackRuntime(string trackName, string artistName, int count, string authToken, List<Tracks> AllCached);
+        public Task<Scrobble> GetScrobbleData(Scrobble ScrobbleIn, string authToken);
 
         public Task<string> GetAccessToken();
 
@@ -48,138 +49,119 @@ namespace LastMinutes.Services
         }
 
 
-        public async Task<(string trackName, string artistName, int durationMs, bool Cached)> SearchForTrack(string trackName, string artistName, string authToken, List<Tracks> AllCached)
+        public async Task<(string trackName, string artistName, int durationMs)> SearchForTrack(string trackName, string artistName, string authToken)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
-                LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();    
+                LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
 
-                if (AllCached == null)
+                HttpClient httpClient = new HttpClient();
+
+                string encodedTrackName = Uri.EscapeDataString(trackName);
+                string encodedArtistName = Uri.EscapeDataString(artistName);
+
+
+                string searchUrl = $"{SpotifyApiUrl}/search?q={encodedTrackName}+artist:{encodedArtistName}&type=track&limit=4";
+
+                httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
+
+                HttpResponseMessage response = await httpClient.GetAsync(searchUrl);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    AllCached = new List<Tracks>();
-                }
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    var responseObject = JsonConvert.DeserializeObject<SpotifySearchResponse>(responseBody);
 
-                //Tracks CachedTrack = _lmdata.Tracks.Where(x => x.Name == trackName && x.Artist == artistName).FirstOrDefault();
-                Tracks CachedTrack = await _lmdata.Tracks.FirstOrDefaultAsync(x => x.Name == trackName && x.Artist == artistName);
-
-                if (CachedTrack != null)
-                {
-                    CachedTrack.Last_Used = DateTime.Now;
-                    _lmdata.Tracks.Update(CachedTrack);
-                    await _lmdata.SaveChangesAsync();
-
-                    return (CachedTrack.Name, CachedTrack.Artist, CachedTrack.Runtime, true);
-
-                } else
-                {
-                    HttpClient httpClient = new HttpClient();
-
-                    string encodedTrackName = Uri.EscapeDataString(trackName);
-                    string encodedArtistName = Uri.EscapeDataString(artistName);
-
-
-                    string searchUrl = $"{SpotifyApiUrl}/search?q={encodedTrackName}+artist:{encodedArtistName}&type=track&limit=4";
-
-                    httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
-
-                    HttpResponseMessage response = await httpClient.GetAsync(searchUrl);
-
-                    if (response.IsSuccessStatusCode)
+                    if (responseObject == null)
                     {
-                        string responseBody = await response.Content.ReadAsStringAsync();
-                        var responseObject = JsonConvert.DeserializeObject<SpotifySearchResponse>(responseBody);
+                        return (trackName, artistName, 0);
+                    }
 
-                        if (responseObject == null)
+                    if (responseObject.Tracks.Items.Count() != 0)
+                    {
+                        try
                         {
-                            return (trackName, artistName, 0, false);
-                        }
+                            var track = responseObject.Tracks.Items[0];
+                            string trackNameResult = track.Name;
+                            string artistNameResult = track.Artists[0].Name;
+                            int durationMsResult = track.duration_ms;
 
-                        if (responseObject.Tracks.Items.Count() != 0)
-                        {
-                            try
+                            Tracks CacheTrack = new Tracks()
                             {
-                                var track = responseObject.Tracks.Items[0];
-                                string trackNameResult = track.Name;
-                                string artistNameResult = track.Artists[0].Name;
-                                int durationMsResult = track.duration_ms;
+                                Name = trackName,
+                                Artist = artistName,
+                                Runtime = durationMsResult,
+                                Date_Added = DateTime.Now,
+                                Last_Used = DateTime.Now
+                            };
 
-                                Tracks CacheTrack = new Tracks()
-                                {
-                                    Name = trackName,
-                                    Artist = artistName,
-                                    Runtime = durationMsResult,
-                                    Date_Added = DateTime.Now,
-                                    Last_Used = DateTime.Now
-                                };
-
-                                _lmdata.Tracks.Add(CacheTrack);
-                                await _lmdata.SaveChangesAsync();
-
-                                return (trackNameResult, artistNameResult, durationMsResult, false);
-                            } catch
+                            _lmdata.Tracks.Add(CacheTrack);
+                            if (await _lmdata.SaveChangesAsync() > 1)
                             {
-                                return (trackName, artistName, 0, false);
+                                Console.WriteLine($"[Cache] New item added: '{trackName}' by '{artistName}', runtime '{durationMsResult}'");
                             }
 
+                            return (trackNameResult, artistNameResult, durationMsResult);
                         }
-                        else
+                        catch
                         {
-                            return (trackName, artistName, 0, false);
+                            return (trackName, artistName, 0);
                         }
+
                     }
                     else
                     {
-                        
-                        Console.WriteLine($"[Spotify] Error occurred while asking Spotify about '{trackName}' by {artistName}..");
-                        Console.WriteLine($"[Spotify] Error is {response.StatusCode}" );
-
-                        // if the response is TooManyRequests, retrieve the cool-down time and wait for that amount before returning an empty/exception variable.
-                        if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                        {
-                            string retryAfterHeader = response.Headers.GetValues("Retry-After").FirstOrDefault() ?? "30";
-                            Console.WriteLine($"[Spotify] Pausing for {retryAfterHeader} seconds.");
-                            await Task.Delay(TimeSpan.FromSeconds(Int32.Parse(retryAfterHeader)));
-                            return ("SpotifyRateLimitHit", "ErrorException", 0, false);
-                        }
-
-                        return ("UnknownResponseError", "ErrorException", 0, false);
+                        return (trackName, artistName, 0);
                     }
                 }
+                else
+                {
+
+                    Console.WriteLine($"[Spotify] Error occurred while asking Spotify about '{trackName}' by {artistName}..");
+                    Console.WriteLine($"[Spotify] Error is {response.StatusCode}");
+
+                    // if the response is TooManyRequests, retrieve the cool-down time and wait for that amount before returning an empty/exception variable.
+                    if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                    {
+                        string retryAfterHeader = response.Headers.GetValues("Retry-After").FirstOrDefault() ?? "30";
+                        Console.WriteLine($"[Spotify] Pausing for {retryAfterHeader} seconds.");
+                        await Task.Delay(TimeSpan.FromSeconds(Int32.Parse(retryAfterHeader)));
+                        return ("SpotifyRateLimitHit", "ErrorException", 0);
+                    }
+
+                    return ("UnknownResponseError", "ErrorException", 0);
+                }
+
+
 
             }
-
             
 
         }
 
 
-        public async Task<Dictionary<(string, string), int>> GetTrackRuntime(string trackName, string artistName, int count, string authToken, List<Tracks> AllCached)
+        public async Task<Scrobble> GetScrobbleData(Scrobble ScrobbleIn, string authToken)
         {
             await semaphoreSlim.WaitAsync();
             try
             {
-                var (t, a, ms, ch) = await SearchForTrack(trackName, artistName, authToken, AllCached);
+                var (t, a, ms) = await SearchForTrack(ScrobbleIn.TrackName, ScrobbleIn.ArtistName, authToken);
 
                 // If the rate limit is hit, run the track request that hit it one more time so that no track is excluded.
                 while (t == "SpotifyRateLimitHit" && a == "ErrorException")
                 {
-                    (t, a, ms, ch) = await SearchForTrack(trackName, artistName, authToken, AllCached);
+                    (t, a, ms) = await SearchForTrack(ScrobbleIn.TrackName, ScrobbleIn.ArtistName, authToken);
                 }
 
-                var runtime = new Dictionary<(string trackName, string artistName), int>();
 
                 // Check if the track data was retrieved from Spotify or from the DB cache.
-                if (ch)
-                {
-                    Console.WriteLine($"[Spotify] Found a cached track '{t}' by '{a}' with an ms runtime of {ms.ToString()}");
-                } else
-                {
-                    Console.WriteLine($"[Spotify] Found a new track '{t}' by '{a}' with an ms runtime of {ms.ToString()}");
-                }
+                
+                Console.WriteLine($"[Spotify] Found a new track '{t}' by '{a}' with an ms runtime of {ms.ToString()}");
 
-                runtime.Add((t, a), ms * count);
+                ScrobbleIn.Runtime = ms;
+                ScrobbleIn.TotalRuntime = ms * ScrobbleIn.Count;
 
-                return runtime;
+                return ScrobbleIn;
 
             }
             finally

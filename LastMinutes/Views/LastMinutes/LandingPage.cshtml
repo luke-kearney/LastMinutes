@@ -2,13 +2,14 @@
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
 @{
+    ViewData["Title"] = "Home";
 }
 
 
-<div class="col d-flex justify-content-center">
+<div class="col d-flex justify-content-center mt-5">
 
 
-    <div class="col-4 p-2 text-white">
+    <div class="col-8 col-lg-4 p-2 text-white">
 
         <h5>Enter your Last.FM Username Below</h5>
 
@@ -18,11 +19,11 @@
 
             <br />
             <div class="col-4 ms-auto d-flex justify-content-end">
-                <button type="submit" class="btn btn-outline-light mb-3">Queue</button>
+                <button type="submit" class="btn btn-outline-light mb-3">Submit</button>
 
             </div>
 
-            <p>Due to Spotify's API rate limiting, this app may take <i>quite a while</i> to gather all the track runtimes.</p>
+            <p><a asp-action="Faq" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Frequently Asked Questions</a></p>
 
         </form>
 

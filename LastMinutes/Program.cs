@@ -40,6 +40,7 @@ switch (DB_Type)
 builder.Services.AddTransient<ILastFMGrabber, LastFMGrabber>();
 builder.Services.AddTransient<ISpotifyGrabber, SpotifyGrabber>();
 builder.Services.AddTransient<IMusicBrainz, MusicBrainz>();
+builder.Services.AddTransient<IDeezerGrabber, DeezerGrabber>();
 
 // Add queue manager
 builder.Services.AddTransient<IQueueManager, QueueManager>();

@@ -5,25 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - LastMinutes</title>
     <link rel="stylesheet" href="~/css/bootstrap/bootstrap.css" />
+
+    <style>
+        /* width */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        /* Track */
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+
+            /* Handle on hover */
+            ::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+
+        .goldhover:hover {
+            color: gold; /* Change the color to red on hover */
+        }
+    </style>
+
 </head>
 <body class="bg-dark d-flex align-items-center justify-content-center vh-100">
 
     <div class="container">
         <main role="main" class="pb-3 text-white">
 
-            <div class="col-4 mt-5 mx-auto d-flex justify-content-start">
-                <div class="col-4">
-                    <h2>LastMinutes</h2>
+            <div class="row">
+                <div class="col-8 col-lg-5 mt-5 mx-auto d-flex justify-content-start">
+                    <div class="col-4">
+                        <h2><a asp-action="Index" asp-controller="LastMinutes" class="text-decoration-none link-light" onmouseover="this.style.color='gold'" onmouseout="this.style.color='white'">LastMinutes</a></h2>
+                    </div>
                 </div>
             </div>
             
-            @RenderBody()
+            <div class="row">
+                @RenderBody()
+            </div>
         </main>
     </div>
 
-    <footer class="border-top border-dark fixed-bottom footer text-muted  bg-dark">
+    <footer class="border-top border-dark fixed-bottom footer text-muted py-2  bg-dark">
         <div class="container">
-            &copy; 2024 - LastMinutes 
+            &copy; 2024 - LastMinutes by <a href="" class="link-secondary text-decoration-none fw-bold goldhover">Lektech</a>
         </div>
     </footer>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>

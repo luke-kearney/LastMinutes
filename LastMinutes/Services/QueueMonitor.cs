@@ -18,14 +18,16 @@ namespace LastMinutes.Services
         private readonly ILastFMGrabber _lastfm;
         private readonly ISpotifyGrabber _spotify;
         private readonly IMusicBrainz _mb;
+        private readonly IDeezerGrabber _deezer;
         private readonly IServiceProvider _serviceProvider;
 
-        public QueueMonitor(ILastFMGrabber lastfm, ISpotifyGrabber spotify, IServiceProvider serviceProvider, IMusicBrainz mb)
+        public QueueMonitor(ILastFMGrabber lastfm, ISpotifyGrabber spotify, IServiceProvider serviceProvider, IMusicBrainz mb, IDeezerGrabber deezer)
         {
             _lastfm = lastfm;
             _serviceProvider = serviceProvider;
             _spotify = spotify;
             _mb = mb;
+            _deezer = deezer;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -34,68 +36,17 @@ namespace LastMinutes.Services
             {
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 
-                //await CheckDatabase();
-                await TestingMB();
+                await CheckDatabase();
+                // await TestingMB();
+               
+                /*string S1 = "Luke Kearney";
+                string S2 = "Luke Wayne";
+                int Similatrity = CompareStrings(S1.ToUpper(), S2.ToUpper());
+                Console.WriteLine($"String similarity is {Similatrity}");
+               */
+
+
             }
-        }
-
-
-        private async Task TestingMB()
-        {
-            List<Scrobble> AccumulatedScrobbles = new List<Scrobble>();
-
-            AccumulatedScrobbles.Add(new Scrobble()
-            {
-                TrackName = "Come With Me Now",
-                ArtistName = "Kongos",
-                Count = 5
-            });
-
-            AccumulatedScrobbles.Add(new Scrobble()
-            {
-                TrackName = "Addams Groove",
-                ArtistName = "MC Hammer",
-                Count = 3
-            });
-
-            AccumulatedScrobbles.Add(new Scrobble()
-            {
-                TrackName = "The Bay",
-                ArtistName = "Metronomy",
-                Count = 25
-            });
-
-            AccumulatedScrobbles.Add(new Scrobble()
-            {
-                TrackName = "Mezmer",
-                ArtistName = "Pinkly Smooth",
-                Count = 25
-            });
-
-            List<Scrobble> ProcessedScrobbles = new List<Scrobble>();
-
-            var MusicBrainzTasks = new List<Task<Scrobble>>();
-
-            foreach (Scrobble item in AccumulatedScrobbles)
-            {
-                var task = _mb.GetScrobbleData(item.TrackName, item.ArtistName, item.Count);
-                MusicBrainzTasks.Add(task);
-            }
-
-            await Task.WhenAll(MusicBrainzTasks);
-
-            foreach (var task in MusicBrainzTasks)
-            {
-                Scrobble result = await task;
-                ProcessedScrobbles.Add(result);
-            }
-
-            foreach (Scrobble item in ProcessedScrobbles)
-            {
-                Console.WriteLine("");
-                Console.WriteLine($"[Queue] Data in on '{item.TrackName}' by '{item.ArtistName}', C: {item.Count}, R: {item.Runtime}, TR: {item.TotalRuntime}");
-            }
-
         }
 
 
@@ -120,6 +71,9 @@ namespace LastMinutes.Services
 
                         int TotalLastFmPages = await _lastfm.GetTotalPages(item.Username);
                         int MaxRequests = 25;
+
+
+                        #region Last.FM Scrobble Grabbing
 
                         var tasks = new List<Task<List<Dictionary<string, string>>>>();
 
@@ -150,29 +104,113 @@ namespace LastMinutes.Services
 
                         // Create dictionary for scrobbles with their total count 
                         Dictionary<(string trackName, string artistName), int> ScrobblesAccumulatedPlays = _lastfm.AccumulateTrackPlays(AllScrobbles);
-
                         int TotalTracks = ScrobblesAccumulatedPlays.Count();
+
+                        List<Scrobble> AccumulatedScrobbles = new List<Scrobble>();
+                        foreach (var dd in ScrobblesAccumulatedPlays)
+                        {
+                            AccumulatedScrobbles.Add(new Scrobble()
+                            {
+                                TrackName = dd.Key.trackName,
+                                ArtistName = dd.Key.artistName,
+                                Count = dd.Value
+                            });
+                        }
 
                         Console.WriteLine($"[Queue] {item.Username} - Total Scrobbles: {AllScrobbles.Count().ToString()}");
                         Console.WriteLine($"[Queue] {item.Username} - Total Tracks: {ScrobblesAccumulatedPlays.Count().ToString()}");
+                        await Task.Delay(TimeSpan.FromSeconds(5));
 
-                        var SpotifyTasks = new List<Task<Dictionary<(string, string), int>>>();
-                        Dictionary<(string, string), int> SpotifyMinutes = new Dictionary<(string, string), int>();
+                        #endregion
 
-                        string SpotifyToken = await _spotify.GetAccessToken();
+                        #region Cache Loading
 
-                        while (SpotifyToken == "tokenfailure")
+                        List<Tracks> AllCached = await _lmdata.Tracks.ToListAsync();
+                        List<Scrobble> ProcessedScrobbles = new List<Scrobble>();
+                        List<Scrobble> UncachedScrobbles = new List<Scrobble>();
+
+
+                        foreach (Scrobble SearchFor in AccumulatedScrobbles)
                         {
-                            Console.WriteLine("[Queue] Failed to retrieve Spotify access token! Trying again...");
-                            SpotifyToken = await _spotify.GetAccessToken();
-                            await Task.Delay(TimeSpan.FromSeconds(5));
+                            Tracks found = AllCached.FirstOrDefault(x => x.Name == SearchFor.TrackName && x.Artist == SearchFor.ArtistName);
+                            if (found != null)
+                            {
+                                ProcessedScrobbles.Add(new Scrobble()
+                                {
+                                    TrackName = SearchFor.TrackName,
+                                    ArtistName = SearchFor.ArtistName,
+                                    Count = SearchFor.Count,
+                                    Runtime = found.Runtime,
+                                    TotalRuntime = found.Runtime * SearchFor.Count
+                                });
+                            }
+                            else
+                            {
+                                UncachedScrobbles.Add(new Scrobble()
+                                {
+                                    TrackName = SearchFor.TrackName,
+                                    ArtistName = SearchFor.ArtistName,
+                                    Count = SearchFor.Count
+                                });
+                            }
                         }
 
-                        List<Tracks> AllCachedTracks = await _lmdata.Tracks.ToListAsync();
+                        #endregion
 
-                        foreach (var entry in ScrobblesAccumulatedPlays)
+
+                        Console.WriteLine($"[Queue] Total cached tracks: {ProcessedScrobbles.Count}");
+                        Console.WriteLine($"[Queue] Total uncached scrobbles: {UncachedScrobbles.Count}");
+                        await Task.Delay(TimeSpan.FromSeconds(5));
+
+
+                        #region Metadata Grabbing
+
+                        // Search Deezer for all things scrobbles
+                        #region Deezer
+                        var DeezerTasks = new List<Task<Scrobble>>();
+                        foreach (Scrobble sgd in UncachedScrobbles)
                         {
-                            var task = _spotify.GetTrackRuntime(entry.Key.trackName, entry.Key.artistName, entry.Value, SpotifyToken, AllCachedTracks);
+                            var task = _deezer.GetScrobbleData(sgd);
+                            DeezerTasks.Add(task);
+                        }
+
+                        await Task.WhenAll(DeezerTasks);
+
+                        foreach (var task in DeezerTasks)
+                        {
+                            Scrobble result = await task;
+                            if (result.Runtime != 0)
+                            {
+                                ProcessedScrobbles.Add(result);
+                                UncachedScrobbles.Remove(result);
+                            }
+                        }
+
+                        Console.WriteLine($"[Queue] Deezer search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
+                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        #endregion
+
+
+                        //Get Spotify auth token
+
+                        #region Spotify Auth Token
+                        /*
+                        string SpotifyAuthToken = await _spotify.GetAccessToken();
+                        while (SpotifyAuthToken == "tokenfailure")
+                        {
+                            Console.WriteLine("[Spotify] Failed to retrieve an auth token from Spotify. Retrying...");
+                            await Task.Delay(TimeSpan.FromSeconds(5));
+                            SpotifyAuthToken = await _spotify.GetAccessToken();
+                        }
+                        #endregion
+
+
+                        // Search Spotify for all things scrobbles
+                        #region Spotify
+                        var SpotifyTasks = new List<Task<Scrobble>>();
+                        foreach (Scrobble sgd in UncachedScrobbles)
+                        {
+                            var task = _spotify.GetScrobbleData(sgd, SpotifyAuthToken);
                             SpotifyTasks.Add(task);
                         }
 
@@ -180,54 +218,77 @@ namespace LastMinutes.Services
 
                         foreach (var task in SpotifyTasks)
                         {
-                            var runtime = await task;
-                            foreach (var kvp in runtime)
+                            Scrobble result = await task;
+                            if (result.Runtime != 0)
                             {
-                                SpotifyMinutes[kvp.Key] = kvp.Value;
+                                ProcessedScrobbles.Add(result);
+                                UncachedScrobbles.Remove(result);
                             }
                         }
 
-                        // Sort through all spotify tracks and pick out those with no runtime
-                       /* List<BadScrobbles> badScrobbles = new List<BadScrobbles>();
+                        Console.WriteLine($"[Queue] Spotify search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
+                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        */
+                        #endregion
 
-                        foreach (var spotScrob in SpotifyMinutes)
+
+                        // Search MusicBrainz for all things scrobbles
+                        #region MusicBrainz
+                        /*var MusicBrainzTasks = new List<Task<Scrobble>>();
+
+                        foreach (Scrobble sgd in UncachedScrobbles)
                         {
-                            if (spotScrob.Value == 0)
-                            {
-                                badScrobbles.Add(new BadScrobbles()
-                                {
-                                    ArtistName = spotScrob.Key.Item2,
-                                    TrackName = spotScrob 
-                                });
-                            }
-                        }*/
-
-                        Console.WriteLine($"[Queue] Spotify Calculated Tracks: {SpotifyMinutes.Count}");
-
-                        long TotalRuntime = 0; 
-
-                        foreach (var Song in SpotifyMinutes)
-                        {
-                            TotalRuntime += Song.Value;
+                            var task = _mb.GetScrobbleData(sgd);
+                            MusicBrainzTasks.Add(task);
                         }
 
-                        Console.WriteLine($"[Queue] Spotify Calculated Minutes: {_spotify.ConvertMsToMinutes(TotalRuntime)} minutes ({TotalRuntime})");
+                        await Task.WhenAll(MusicBrainzTasks);
 
-                        var TopTenMinutes = SpotifyMinutes
-                            .OrderByDescending(kvp => kvp.Value)
+                        foreach (var task in MusicBrainzTasks)
+                        {
+                            Scrobble result = await task;
+                            if (result.Runtime != 0)
+                            {
+                                ProcessedScrobbles.Add(result);
+                                UncachedScrobbles.Remove(result);
+                            }
+                        }
+
+                        Console.WriteLine($"[Queue] MusicBrainz search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
+                        await Task.Delay(TimeSpan.FromSeconds(10));*/
+                        #endregion
+
+
+                        #endregion
+
+
+                        Console.WriteLine($"[Queue] Total Calculated Tracks: {ProcessedScrobbles.Count}");
+
+                        long TotalRuntime = 0;
+
+                        // Calculate total runtime
+                        foreach (Scrobble ctr in ProcessedScrobbles)
+                        {
+                            TotalRuntime += ctr.TotalRuntime;
+                        }
+
+                        Console.WriteLine($"[Queue] Total Calculated Minutes: {_spotify.ConvertMsToMinutes(TotalRuntime)} minutes ({TotalRuntime})");
+
+                        var TopTenMinutes = UncachedScrobbles
+                            .OrderByDescending(kvp => kvp.Count)
                             .Take(10)
                             .ToList();
 
                         foreach (var Song in TopTenMinutes)
                         {
-                            Console.WriteLine($"[Queue] Song: {Song.Key.Item1} by {Song.Key.Item2}, total listening time: {_spotify.ConvertMsToMinutes(Song.Value)} minutes");
+                            Console.WriteLine($"[Queue] BadScrobble: {Song.TrackName} by {Song.ArtistName}, count of {Song.Count}");
                         }
 
                         Models.LMData.Results Result = new Models.LMData.Results()
                         {
                             Username = item.Username,
                             TotalPlaytime = TotalRuntime,
-                            AllScrobbles = JsonConvert.SerializeObject(SpotifyMinutes.OrderByDescending(kvp => kvp.Value).Take(25).ToList()),
+                            AllScrobbles = JsonConvert.SerializeObject(ProcessedScrobbles.OrderByDescending(kvp => kvp.TotalRuntime).Take(25).ToList()),
                             Created_On = DateTime.Now
                         };
 
@@ -240,7 +301,8 @@ namespace LastMinutes.Services
                     }
 
 
-                } else
+                }
+                else
                 {
                     Console.WriteLine("[Queue] Queue is currently empty.");
                 }
@@ -250,18 +312,23 @@ namespace LastMinutes.Services
 
 
 
+
+
+
         private async Task<bool> ClearFromQueue(Models.LMData.Queue item)
         {
-            if (item == null) { return false;  }
+            if (item == null) { return false; }
             using (var scope = _serviceProvider.CreateScope())
             {
                 LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
 
                 _lmdata.Queue.Remove(item);
 
-                if (await _lmdata.SaveChangesAsync() > 0){
+                if (await _lmdata.SaveChangesAsync() > 0)
+                {
                     return true;
-                } else
+                }
+                else
                 {
                     return false;
                 }
@@ -269,7 +336,9 @@ namespace LastMinutes.Services
             }
         }
 
+
         
-        
+
+
     }
 }
