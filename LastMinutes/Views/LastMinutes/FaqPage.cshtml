@@ -13,48 +13,55 @@
 
 <div class="row d-flex justify-content-center">
     <div class="col-12 col-lg-5 p-2 px-5 text-white" style="max-height: 650px; overflow-y: scroll;  overflow-x: hidden">
+        <p class="my-4">
 
+            <div class="row my-4">
+                <h5>How long will it take?</h5>
+                <span>
+                    That entirely depends on how many scrobbles you have :)<br /><br />
+                    This app currently caches every single track which it can find a runtime for, which means that the more this app is used, the less time it will take. <br /> <br> Current Track Cache: <b>@Model.TotalCachedTracks</b> tracks.
+                </span>
+            </div>
 
+            <div class="row my-5">
+                <h5>Where do we get the track data from?</h5>
+                <span>
+                    Currently, we use Deezer as our main source followed by Spotify and MusicBrainz. Whichever scrobbles Deezer can not find, will then be searched for on Spotify and then MusicBrainz.
+                </span>
+            </div>
 
+            <div class="row my-5">
+                <h5>How accurate is the final result?</h5>
+                <span>
+                    I haven't yet done any testing, but I would estimate it to be around 95% accurate at-least.
+                </span>
+            </div>
 
-            <p class="my-4">
+            <div class="row my-5">
+                <h5>What are my <i>bad scrobbles</i>?</h5>
+                <span>
+                    Any scrobbles which we cannot find a runtime for and that have a play count of more than 5 will be flagged as a <i>bad scrobble</i>.<br /><br />
+                    Sometimes scrobbles may not match results found in our data sources. Also, API requests will fail if some tracks have stupidly long names (I'm looking at you Surfjan Stevens!).
+                    <br /><br />Eventually, if much demand is met, it will be possible to manually add bad scrobbles to the track cache.
+                </span>
+            </div>
 
-                <div class="row my-4">
-                    <h5>How long will it take?</h5>
-                    <span>
-                        That entirely depends on how many scrobbles you have :)<br /><br />
-                        This app currently caches every single track which it can find a runtime for, which means that the more this app is used, the less time it will take. <br /> <br> Current Track Cache: <b>@Model.TotalCachedTracks</b> tracks.
-                    </span>
-                </div>
+            <div class="row my-5">
+                <h5>Why can it take so long?</h5>
+                <span>
+                    This application only processes one username at a time. This is because of API rate limiting from Spotify and MusicBrainz. To be safe and prevent complete API cooldowns, this application only makes around one request per second.<br /><br />
+                    If this web app is met with much demand, then perhaps in the future I can implement synchronous queue processing. This is just a personal/hobby project of mine and I cannot afford to spend full time on it.
+                </span>
+            </div>
 
-                <div class="row my-5">
-                    <h5>Where do we get the track data from?</h5>
-                    <span>
-                        Currently, we use Deezer as our main source followed by Spotify and MusicBrainz. Whichever scrobbles Deezer can not find, will then be searched for on Spotify and then MusicBrainz.
-                    </span>
-                </div>
-
-                <div class="row my-5">
-                    <h5>How accurate is the final result?</h5>
-                    <span>
-                        I haven't yet done any testing, but I would estimate it to be around 95% accurate at-least.
-                    </span>
-                </div>
-
-                <div class="row my-5">
-                    <h5>What are my <i>bad scrobbles</i>?</h5>
-                    <span>
-                        Any scrobbles which we cannot find a runtime for and that have a play count of more than 5 will be flagged as a <i>bad scrobble</i>.<br /><br />
-                        Sometimes scrobbles may not match results found in our data sources. Eventually, if much demand is met, it will be possible to manually add bad scrobbles to the track cache.
-                    </span>
-                </div>
-
-                <div class="row my-5">
-                    <h5>Why can it take so long?</h5>
-                    <span>
-                        This application only processes one username at a time. This is because of API rate limiting from Spotify and MusicBrainz. To be safe and prevent complete API cooldowns, this application only makes around one request per second.<br /><br />
-                        If this web app is met with much demand, then perhaps in the future I can implement synchronous queue processing. This is just a personal/hobby project of mine and I cannot afford to spend full time on it.
-                    </span>
+            <div class="row my-5">
+                <h5>What <i>special privileges</i> do I get for signing in?</h5>
+                <span>
+                    Only accounts which I specify may sign in to access special features. This allows you to view your minutes over various amounts of time- compared to the default (last 31 days). You will also be exempt from the cooldown.
+                    <br />
+                    <br />
+                    Currently, only my friends have accounts with special privileges. I'm not sure if this is something I'll ever change in the future.
+                </span>
             </div>
 
             <div class="row my-5">
@@ -65,7 +72,7 @@
                 </span>
             </div>
 
-            </p>
+        </p>
 
 
 

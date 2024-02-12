@@ -13,6 +13,8 @@ namespace LastMinutes.Models.LMData
         public DateTime Created_On { get; set; }
         public DateTime Updated_On { get; set; }
 
+        public int Mode { get; set; }
+
 
         public Queue()
         {

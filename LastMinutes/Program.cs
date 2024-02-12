@@ -45,6 +45,9 @@ builder.Services.AddTransient<IDeezerGrabber, DeezerGrabber>();
 // Add queue manager
 builder.Services.AddTransient<IQueueManager, QueueManager>();
 
+// Add cache manager
+builder.Services.AddTransient<ICacheManager, CacheManager>();
+
 // Add custom queue controller
 builder.Services.AddHostedService<QueueMonitor>();
 

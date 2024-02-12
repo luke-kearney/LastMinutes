@@ -1,0 +1,38 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@model LastMinutes.Models.ViewModels.ResultsViewModel
+@{
+    ViewData["Title"] = $"{Model.Username}'s Top Minutes";
+}
+
+
+<div class="col d-flex justify-content-center">
+
+
+
+    
+
+    
+
+    <div class="col-12 col-md-10 p-2 text-white">
+        <h4 class="my-3">Your Top Minutes</h4>
+        
+        <p>
+            @foreach (Scrobble scrob in Model.TopScrobbles)
+            {
+                double minutes = scrob.TotalRuntime / 60000;
+                <span>
+                    <b>@scrob.TrackName</b> by <i>@scrob.ArtistName</i> <b>(@minutes minutes)</b>
+                </span>
+
+                <br />
+            }
+        </p>
+
+        <h6><a asp-action="ResultsIndex" asp-controller="LastMinutes" asp-route-Username="@Model.Username" class="link-light text-decoration-none goldhover">Go Back</a></h6>
+    </div>
+
+
+
+</div>

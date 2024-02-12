@@ -1,0 +1,53 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@model LastMinutes.Models.ViewModels.ResultsViewModel
+@{
+    ViewData["Title"] = "Your Minutes";
+    ViewData["MainPage"] = "true";
+}
+
+
+<div class="col d-flex justify-content-center">
+
+
+
+    <div class="col-12 col-md-5 p-2 text-white">
+
+        <h1><a asp-action="Index" asp-controller="LastMinutes" class="text-decoration-none link-light goldhover">LastMinutes</a></h1>
+        <h3>@Html.Raw("@")@Model.Username</h3>
+        <br />
+        <h6>You have listened to</h6>
+        <h1 class="my-1 mt-0 pt-0">@Model.TotalMinutes minutes</h1>
+
+        <p>This was over a period of <b>all time</b>.</p>
+
+        <br /><br /><br />
+        <p>
+
+            <a asp-action="TopScrobblesIndex" asp-controller="LastMinutes" asp-route-Username="@Model.Username" class="link-light text-decoration-none goldhover">View your <b>Top Scrobbles</b></a>
+           <br />
+            @if (Model.BadScrobbles.Count() != 0)
+            {
+               <span>You have @Model.BadScrobbles.Count()</span>
+                <b><a asp-action="BadScrobblesIndex" asp-controller="LastMinutes" asp-route-Username="@Model.Username" class="link-light text-decoration-none goldhover">Bad Scrobbles</a></b>
+            } else
+            {
+                <span class="text-muted">You have no bad scrobbles. Hooray!</span>
+            }
+
+        </p>
+
+        <p>
+            @if (Model.CanRefresh)
+            {
+                <a asp-action="Refresh" asp-controller="LastMinutes" asp-route-Username="@Model.Username" class=" link-secondary text-decoration-none goldhover "><b>Delete Results..</a>
+            } else
+            {
+                <span class="text-muted">You can only refresh in @Model.Cooldown minutes <br /> (@Model.CooldownText)</span>
+            }
+            
+        </p>
+    </div>
+
+</div>

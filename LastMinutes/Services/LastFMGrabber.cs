@@ -1,4 +1,5 @@
 ﻿using LastMinutes.Data;
+using LastMinutes.Models.LastFM;
 using Newtonsoft.Json;
 using System.Text;
 using System.Xml.Linq;
@@ -9,7 +10,7 @@ namespace LastMinutes.Services
     public interface ILastFMGrabber
     {
 
-        public string Test();
+        public Task<LastFMUserData> GetUserData(string username);
 
         public Task<int> GetTotalPages(string username);
 
@@ -40,11 +41,26 @@ namespace LastMinutes.Services
 
         }
 
-        public string Test()
+        public async Task<LastFMUserData> GetUserData(string username)
         {
-            return LastFMApiUrl;
-        }
+            string url = $"{LastFMApiUrl}?method=user.getinfo&user={username}&api_key={LastFMApiKey}&format=json";
 
+            using (HttpClient client = new HttpClient())
+            {
+
+                HttpResponseMessage response = await client.GetAsync(url);
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    LastFMUserData data = JsonConvert.DeserializeObject<LastFMUserData>(responseBody) ?? new LastFMUserData() { Success = false, ErrorMessage = "Unknown error occurred." };
+                    return data;
+                } else
+                {
+                    return new LastFMUserData() { Success = false, ErrorMessage = $"Request error message: {response.StatusCode.ToString()}" };
+                }
+
+            }
+        }
 
         public async Task<List<Dictionary<string, string>>> FetchScrobblesPerPage(string username, int page)
         {
@@ -53,6 +69,14 @@ namespace LastMinutes.Services
             using (HttpClient client = new HttpClient())
             {
                 HttpResponseMessage response = await client.GetAsync(url);
+                int Retries = 0;
+                while (!response.IsSuccessStatusCode && Retries > 5) 
+                {
+                    response = await client.GetAsync(url);
+                    Retries++;
+                    Console.WriteLine($"[LastFM] {username} - error occurred while pulling scrobbles, retrying... ({Retries} / 5)");
+                }
+
                 if (response.IsSuccessStatusCode)
                 {
                     string responsebody = await response.Content.ReadAsStringAsync();
@@ -91,7 +115,7 @@ namespace LastMinutes.Services
                     return scrobblesPerPage;
                 } else
                 {
-                    Console.WriteLine($"Error: {response.StatusCode}");
+                    Console.WriteLine($"[LastFM] {username} - error occurred while pulling scrobbles, all retries failed..");
                     return new List<Dictionary<string, string>>();
                 }
 

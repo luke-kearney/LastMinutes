@@ -1,5 +1,6 @@
 ﻿using LastMinutes.Data;
 using LastMinutes.Models;
+using LastMinutes.Models.LastFM;
 using LastMinutes.Models.LMData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -73,6 +74,7 @@ namespace LastMinutes.Services
                         // Populate 
                         List<Dictionary<string, string>> AllScrobbles = new List<Dictionary<string, string>>();
 
+                        LastFMUserData LastFMUser = await _lastfm.GetUserData(item.Username);
                         int TotalLastFmPages = await _lastfm.GetTotalPages(item.Username);
                         int MaxRequests = 25;
 
@@ -121,8 +123,9 @@ namespace LastMinutes.Services
                             });
                         }
 
-                        Console.WriteLine($"[Queue] {item.Username} - Total Scrobbles: {AllScrobbles.Count().ToString()}");
-                        Console.WriteLine($"[Queue] {item.Username} - Total Tracks: {ScrobblesAccumulatedPlays.Count().ToString()}");
+                        Console.WriteLine($"[Queue] {item.Username} - Account Scrobbles: {LastFMUser.User.Playcount}");
+                        Console.WriteLine($"[Queue] {item.Username} - Loaded Scrobbles: {AllScrobbles.Count()}");
+                        Console.WriteLine($"[Queue] {item.Username} - Loaded Tracks: {ScrobblesAccumulatedPlays.Count()}");
                         await Task.Delay(TimeSpan.FromSeconds(5));
 
                         #endregion
@@ -136,7 +139,10 @@ namespace LastMinutes.Services
 
                         foreach (Scrobble SearchFor in AccumulatedScrobbles)
                         {
-                            Tracks found = AllCached.FirstOrDefault(x => x.Name == SearchFor.TrackName && x.Artist == SearchFor.ArtistName);
+                            Tracks found = AllCached.FirstOrDefault(x =>
+                                                                        string.Equals(x.Name, SearchFor.TrackName, StringComparison.OrdinalIgnoreCase) &&
+                                                                        string.Equals(x.Artist, SearchFor.ArtistName, StringComparison.OrdinalIgnoreCase));
+
                             if (found != null)
                             {
                                 ProcessedScrobbles.Add(new Scrobble()
@@ -191,7 +197,7 @@ namespace LastMinutes.Services
                         }
 
                         Console.WriteLine($"[Queue] Deezer search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
-                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        await Task.Delay(TimeSpan.FromSeconds(3));
                         #endregion
 
 
@@ -230,7 +236,7 @@ namespace LastMinutes.Services
                         }
 
                         Console.WriteLine($"[Queue] Spotify search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
-                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        await Task.Delay(TimeSpan.FromSeconds(3));
                         
                         #endregion
 
@@ -258,7 +264,7 @@ namespace LastMinutes.Services
                         }
 
                         Console.WriteLine($"[Queue] MusicBrainz search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
-                        await Task.Delay(TimeSpan.FromSeconds(10));*/
+                        await Task.Delay(TimeSpan.FromSeconds(3));*/
                         #endregion
 
 
@@ -277,23 +283,31 @@ namespace LastMinutes.Services
 
                         Console.WriteLine($"[Queue] Total Calculated Minutes: {_spotify.ConvertMsToMinutes(TotalRuntime)} minutes ({TotalRuntime})");
 
-                        var TopTenMinutes = UncachedScrobbles
-                            .OrderByDescending(kvp => kvp.Count)
-                            .Take(10)
+                        List<Scrobble> TopScrobbles = ProcessedScrobbles
+                            .OrderByDescending(kvp => kvp.TotalRuntime)
+                            .Take(25)
                             .ToList();
 
-                        foreach (var Song in TopTenMinutes)
+                        List<Scrobble> BadScrobbles = UncachedScrobbles
+                            .OrderByDescending(kvp => kvp.Count)
+                            .Take(25)
+                            .ToList();
+
+                       /* foreach (var Song in TopTenMinutes)
                         {
                             Console.WriteLine($"[Queue] BadScrobble: {Song.TrackName} by {Song.ArtistName}, count of {Song.Count}");
-                        }
+                        }*/
 
                         Models.LMData.Results Result = new Models.LMData.Results()
                         {
                             Username = item.Username,
                             TotalPlaytime = TotalRuntime,
-                            AllScrobbles = JsonConvert.SerializeObject(ProcessedScrobbles.OrderByDescending(kvp => kvp.TotalRuntime).Take(25).ToList()),
+                            AllScrobbles = JsonConvert.SerializeObject(TopScrobbles),
+                            BadScrobbles = JsonConvert.SerializeObject(BadScrobbles),
                             Created_On = DateTime.Now
                         };
+
+                        await RemoveResults(item.Username);
 
                         _lmdata.Results.Add(Result);
 
@@ -332,6 +346,23 @@ namespace LastMinutes.Services
                     return true;
                 }
                 else
+                {
+                    return false;
+                }
+
+            }
+        }
+
+        private async Task<bool> RemoveResults(string Username)
+        {
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                IQueueManager _queue = scope.ServiceProvider.GetService<IQueueManager>();
+
+                if (await _queue.RemoveResults(Username))
+                {
+                    return true;
+                } else
                 {
                     return false;
                 }

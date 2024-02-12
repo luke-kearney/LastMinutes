@@ -7,10 +7,9 @@ namespace LastMinutes.Services
 
     public interface IQueueManager
     {
-        public Task<bool> AddUsernameToQueue(string username);
+        public Task<bool> AddUsernameToQueue(string username, int mode);
         public Task<bool> InQueue(string username);
         public Task<bool> IsFinished(string username);
-
         public Task<bool> RemoveResults(string username);
 
         public int GetLength();
@@ -21,14 +20,18 @@ namespace LastMinutes.Services
 
         public string Busy();
 
+        public Task<bool> CanRefresh(string username);
 
+        public Task<int> Cooldown(string username);
+
+        public string GetBadScrobbleText(int count);
     }
 
 
     public class QueueManager : IQueueManager
     {
         private readonly LMData _lmdata;
-
+        private readonly string[] LastFmFriends = { "MRDAWGZA", "MEEKOCS", "DYLANMOHLEH", "KIARA_DONUT", "ZERTICAN", "SIRJAK952" };
 
         public QueueManager(
             LMData lmdata) 
@@ -37,18 +40,29 @@ namespace LastMinutes.Services
         }
 
 
-        public async Task<bool> AddUsernameToQueue(string username)
+        public async Task<bool> AddUsernameToQueue(string username, int mode)
         {
             if (username == null || username == string.Empty)
             {
                 return false;
             }
+
+            if (!LastFmFriends.Contains(username.ToUpper()))
+            {
+                mode = 3;
+            } 
+            if (mode == 0)
+            {
+                mode = 3;
+            }
+
             LastMinutes.Models.LMData.Queue CheckExists = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username);
             if (CheckExists == null)
             {
                 LastMinutes.Models.LMData.Queue queue = new Models.LMData.Queue()
                 {
-                    Username = username
+                    Username = username,
+                    Mode = mode
                 };
 
                 _lmdata.Queue.Add(queue);
@@ -128,11 +142,6 @@ namespace LastMinutes.Services
             return _lmdata.Queue.Count();
         }
 
-       /* public string ConvertMinutesToWordsShort(int minutes)
-        {
-            return $"{minutes} minutes";
-        }*/
-
         public string ConvertMinutesToWordsLong(int minutes)
         {
             if (minutes < 0)
@@ -200,5 +209,82 @@ namespace LastMinutes.Services
             }
         }
 
+        public async Task<bool> CanRefresh(string username)
+        {
+            // How long should the public cooldown be?
+            int HoursFrom = 24;
+
+            // Format the string to upcase
+            string lastFmUsername = username.ToUpper();
+
+            // Get the created_on
+            LastMinutes.Models.LMData.Results Result = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username.ToUpper() == lastFmUsername );
+            if (Result == null)
+            {
+                return false;
+            }
+
+            // Calculate the difference
+            TimeSpan timeSinceCreated = DateTime.Now - Result.Created_On;
+
+            // Check the difference from the set cooldown time
+            if ((int)timeSinceCreated.TotalHours >  HoursFrom)
+            {
+                // return true if they can refresh their minutes
+                return true;
+            } else
+            {
+                // check if the username is in my friends list
+                if (LastFmFriends.Contains(lastFmUsername))
+                {
+                    // I know this person, they can skip the wait
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        public async Task<int> Cooldown(string username)
+        {
+            string lastFmUsername = username.ToUpper();
+            LastMinutes.Models.LMData.Results Result = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username.ToUpper() == lastFmUsername);
+            if (Result == null)
+            {
+                return 0;
+            }
+
+            TimeSpan TimePassed = DateTime.Now - Result.Created_On;
+            TimeSpan RemainingTime = TimeSpan.FromHours(24) - TimePassed;
+            int hoursLeft = (int)Math.Ceiling(RemainingTime.TotalMinutes);
+
+            return hoursLeft;
+        }
+
+        public string GetBadScrobbleText(int count)
+        {
+            if (count == 0)
+            {
+                return "no bad scrobbles :)";
+            }else if (count < 2)
+            {
+                return "a couple of bad scrobbles :/";
+            }
+            else if (count < 5)
+            {
+                return "a handful of bad scrobbles :/";
+            }
+            else if (count < 10)
+            {
+                return "a lot of bad scrobbles :/";
+            }
+            else if (count < 15)
+            {
+                return "quite a lot of bad scrobbles :(";
+            }
+            else
+            {
+                return "a ton of bad scrobbles :(";
+            }
+        }
     }
 }

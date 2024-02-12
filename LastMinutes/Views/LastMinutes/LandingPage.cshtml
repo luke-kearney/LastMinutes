@@ -3,6 +3,7 @@
 *@
 @{
     ViewData["Title"] = "Home";
+    bool SignedIn = false;
 }
 
 
@@ -11,21 +12,57 @@
 
     <div class="col-12 col-lg-4 p-2 text-white">
 
-        <h5>Enter your Last.FM Username Below</h5>
 
-        <form asp-action="CheckMinutes" asp-controller="LastMinutes">
+        <div class="col my-4">
 
-            <input class="form-control" type="text" name="username" placeholder="Last.FM Username" required />
+            <h5>Enter your Last.FM Username Below</h5>
 
-            <br />
-            <div class="col-4 ms-auto d-flex justify-content-end">
-                <button type="submit" class="btn btn-outline-light mb-3">Submit</button>
+            <form asp-action="CheckMinutes" asp-controller="LastMinutes">
 
-            </div>
+                <input class="form-control" type="text" name="username" placeholder="Last.FM Username" required />
 
-            <p><a asp-action="Faq" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Frequently Asked Questions</a></p>
+                <br />
+                <div class="col d-flex flex-wrap justify-content-between">
 
-        </form>
+                    <div class="col col-md-6 my-2">
+                        @if (SignedIn)
+                        {
+                            <select class="form-select form-select-sm" name="Mode" aria-label="Over Time">
+                                <option value="1" selected>Over All Time</option>
+                                <option value="2">Over The Last Week</option>
+                                <option value="3">Over The Last Month</option>
+                                <option value="4">Over The Last Year</option>
+                                <option value="5">This Week</option>
+                                <option value="6">This Month</option>
+                                <option value="7">This Year</option>
+                            </select>
+                        } else
+                        {
+                            <input type="hidden" name="Mode" value="3"/>
+                        }
+                    </div>
+
+
+                    <div class="col-12 col-md-4 d-grid gap-2 my-2">
+                        <button type="submit" class="btn btn-outline-light mb-3">Submit</button>
+                    </div>
+
+                </div>
+
+
+
+            </form>
+
+        </div>
+        
+
+
+        <p>
+            <a asp-action="SignIn" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Sign In <span class="text-muted">(for special privileges)</span></a>
+            <br>
+            <a asp-action="Faq" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Frequently Asked Questions</a>
+
+        </p>
 
         
 
