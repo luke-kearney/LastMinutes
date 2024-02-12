@@ -12,9 +12,9 @@ namespace LastMinutes.Services
 
         public Task<LastFMUserData> GetUserData(string username);
 
-        public Task<int> GetTotalPages(string username);
+        public Task<int> GetTotalPages(string username, string to, string from);
 
-        public Task<List<Dictionary<string, string>>> FetchScrobblesPerPage(string username, int page);
+        public Task<List<Dictionary<string, string>>> FetchScrobblesPerPage(string username, int page, string to, string from);
 
         public Dictionary<(string, string), int> AccumulateTrackPlays(List<Dictionary<string, string>> AllScrobbles); 
 
@@ -62,9 +62,13 @@ namespace LastMinutes.Services
             }
         }
 
-        public async Task<List<Dictionary<string, string>>> FetchScrobblesPerPage(string username, int page)
+        public async Task<List<Dictionary<string, string>>> FetchScrobblesPerPage(string username, int page, string to, string from)
         {
-            string url = $"{LastFMApiUrl}?method=user.getRecentTracks&user={username}&api_key={LastFMApiKey}&format=xml&limit=200&page={page}";
+            string url = $"{LastFMApiUrl}?method=user.getRecentTracks&user={username}&api_key={LastFMApiKey}&from={from}&to={to}&format=xml&limit=200&page={page}";
+            if (string.IsNullOrEmpty(to) || string.IsNullOrEmpty(from))
+            {
+                url = $"{LastFMApiUrl}?method=user.getRecentTracks&user={username}&api_key={LastFMApiKey}&format=xml&limit=200&page={page}";
+            }
 
             using (HttpClient client = new HttpClient())
             {
@@ -122,9 +126,13 @@ namespace LastMinutes.Services
             }
         }
 
-        public async Task<int> GetTotalPages(string username)
+        public async Task<int> GetTotalPages(string username, string to, string from)
         {
-            string url = $"{LastFMApiUrl}?method=user.getRecentTracks&user={username}&api_key={LastFMApiKey}&format=json&limit=200";
+            string url = $"{LastFMApiUrl}?method=user.getRecentTracks&user={username}&api_key={LastFMApiKey}&from={from}&to={to}&format=json&limit=200";
+            if (string.IsNullOrEmpty(to) || string.IsNullOrEmpty(from))
+            {
+                url = $"{LastFMApiUrl}?method=user.getRecentTracks&user={username}&api_key={LastFMApiKey}&format=json&limit=200";
+            }
 
             using (HttpClient client = new HttpClient())
             {

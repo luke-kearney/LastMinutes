@@ -71,11 +71,66 @@ namespace LastMinutes.Services
                     if (item != null)
                     {
 
+                        #region Get Mode Strings
+
+                        string to = "";
+                        string from = "";
+                        string TimeFrame = "";
+
+                        switch (item.Mode)
+                        {
+                            case 1:
+                                // All time
+                                TimeFrame = "all time";
+                                break;
+                            case 2:
+                                // Last week
+                                TimeFrame = "the last week";
+                                from = DateTimeOffset.UtcNow.AddDays(-7).ToUnixTimeSeconds().ToString();
+                                to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                                break;
+                            case 3:
+                                // Last month
+                                TimeFrame = "the last month";
+                                from = DateTimeOffset.UtcNow.AddMonths(-1).ToUnixTimeSeconds().ToString();
+                                to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                                break;
+                            case 4:
+                                // Last year
+                                TimeFrame = "the last year";
+                                from = DateTimeOffset.UtcNow.AddYears(-1).ToUnixTimeSeconds().ToString();
+                                to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                                break;
+                            case 5:
+                                // This week
+                                TimeFrame = "this week";
+                                from = DateTimeOffset.UtcNow.AddDays(-DateTimeOffset.UtcNow.DayOfWeek.GetHashCode()).ToUnixTimeSeconds().ToString();
+                                to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                                break;
+                            case 6:
+                                // This month
+                                TimeFrame = "this month";
+                                from = DateTimeOffset.UtcNow.AddDays(-DateTimeOffset.UtcNow.Day).ToUnixTimeSeconds().ToString();
+                                to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                                break;
+                            case 7:
+                                // This year
+                                TimeFrame = "this year";
+                                from = DateTimeOffset.UtcNow.AddDays(-DateTimeOffset.UtcNow.DayOfYear).ToUnixTimeSeconds().ToString();
+                                to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                                break;
+                            default:
+                                TimeFrame = "all time";
+                                from = DateTimeOffset.UtcNow.AddMonths(-1).ToUnixTimeSeconds().ToString();
+                                break;
+                        }
+                        #endregion
+
                         // Populate 
                         List<Dictionary<string, string>> AllScrobbles = new List<Dictionary<string, string>>();
 
                         LastFMUserData LastFMUser = await _lastfm.GetUserData(item.Username);
-                        int TotalLastFmPages = await _lastfm.GetTotalPages(item.Username);
+                        int TotalLastFmPages = await _lastfm.GetTotalPages(item.Username, to, from);
                         int MaxRequests = 25;
 
 
@@ -85,7 +140,7 @@ namespace LastMinutes.Services
 
                         for (int page = 1; page <= TotalLastFmPages; page++)
                         {
-                            tasks.Add(_lastfm.FetchScrobblesPerPage(item.Username, page));
+                            tasks.Add(_lastfm.FetchScrobblesPerPage(item.Username, page, to, from));
                             // Limit the amount of concurrent requests.
                             if (tasks.Count >= MaxRequests || page == TotalLastFmPages)
                             {
@@ -126,7 +181,7 @@ namespace LastMinutes.Services
                         Console.WriteLine($"[Queue] {item.Username} - Account Scrobbles: {LastFMUser.User.Playcount}");
                         Console.WriteLine($"[Queue] {item.Username} - Loaded Scrobbles: {AllScrobbles.Count()}");
                         Console.WriteLine($"[Queue] {item.Username} - Loaded Tracks: {ScrobblesAccumulatedPlays.Count()}");
-                        await Task.Delay(TimeSpan.FromSeconds(5));
+                        Console.WriteLine($"[Queue] {item.Username} - Loaded Tracks: {ScrobblesAccumulatedPlays.Count()}");
 
                         #endregion
 
@@ -170,7 +225,6 @@ namespace LastMinutes.Services
 
                         Console.WriteLine($"[Queue] Total cached tracks: {ProcessedScrobbles.Count}");
                         Console.WriteLine($"[Queue] Total uncached scrobbles: {UncachedScrobbles.Count}");
-                        await Task.Delay(TimeSpan.FromSeconds(5));
 
 
                         #region Metadata Grabbing
@@ -197,7 +251,6 @@ namespace LastMinutes.Services
                         }
 
                         Console.WriteLine($"[Queue] Deezer search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
-                        await Task.Delay(TimeSpan.FromSeconds(3));
                         #endregion
 
 
@@ -236,7 +289,6 @@ namespace LastMinutes.Services
                         }
 
                         Console.WriteLine($"[Queue] Spotify search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
-                        await Task.Delay(TimeSpan.FromSeconds(3));
                         
                         #endregion
 
@@ -304,7 +356,11 @@ namespace LastMinutes.Services
                             TotalPlaytime = TotalRuntime,
                             AllScrobbles = JsonConvert.SerializeObject(TopScrobbles),
                             BadScrobbles = JsonConvert.SerializeObject(BadScrobbles),
-                            Created_On = DateTime.Now
+                            Created_On = DateTime.Now,
+                            FromWhen = DateTimeOffset.FromUnixTimeSeconds(int.Parse(from)).DateTime,
+                            ToWhen = DateTimeOffset.FromUnixTimeSeconds(int.Parse(to)).DateTime,
+                            TimeFrame = TimeFrame
+
                         };
 
                         await RemoveResults(item.Username);
@@ -321,7 +377,7 @@ namespace LastMinutes.Services
                 }
                 else
                 {
-                    Console.WriteLine("[Queue] Queue is currently empty.");
+                    //Console.WriteLine("[Queue] Queue is currently empty.");
                 }
 
             }

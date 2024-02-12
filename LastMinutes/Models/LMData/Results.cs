@@ -20,6 +20,7 @@ namespace LastMinutes.Models.LMData
         public int Mode { get; set; }
         public DateTime FromWhen { get; set; }
         public DateTime ToWhen { get; set; }
+        public string TimeFrame { get; set; } = string.Empty;
 
         public Results()
         {

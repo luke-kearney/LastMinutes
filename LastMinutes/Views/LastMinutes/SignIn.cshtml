@@ -1,0 +1,56 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewData["Title"] = "Auth Your Username";
+}
+
+
+<div class="col d-flex justify-content-center mt-5">
+
+
+    <div class="col-12 col-lg-4 p-2 text-white">
+
+
+        <div class="col my-4">
+
+            <h5>Sign in to LastMinutes</h5>
+            <p>Enter your username below to gain access to more time periods and features.</p>
+            <form asp-action="SignIn" asp-controller="LastMinutes">
+
+                <input class="form-control" type="text" name="username" placeholder="Last.FM Username" required />
+
+                <br />
+                <div class="col d-flex flex-wrap justify-content-between">
+
+                    <div class="col col-md-6 my-2">
+
+                    </div>
+
+
+                    <div class="col-12 col-md-4 d-grid gap-2 my-2">
+                        <button type="submit" class="btn btn-outline-light mb-3">Sign In</button>
+                    </div>
+
+                </div>
+
+
+
+            </form>
+
+        </div>
+        
+
+
+        <p>
+            <a asp-action="Index" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Go Back</a>
+            <br>
+            <a asp-action="Faq" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Frequently Asked Questions</a>
+
+        </p>
+
+        
+
+    </div>
+
+</div>

@@ -17,11 +17,11 @@ namespace LastMinutes.Controllers
         }
 
 
-        [Route("/debug/queue/add/{username}")]
+        /*[Route("/debug/queue/add/{username}")]
         public async Task<IActionResult> AddToQueue(string username)
         {
 
-            if (await _queue.AddUsernameToQueue(username))
+            if (await _queue.AddUsernameToQueue(username, ))
             {
                 return Content($"Last.FM username '{username}' was successfully added to the queue. Total queue count: {_queue.GetLength()}");
             } else
@@ -29,6 +29,6 @@ namespace LastMinutes.Controllers
                 return Content("Something went wrong while adding that username to the queue.");
             }
 
-        }
+        }*/
     }
 }

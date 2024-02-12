@@ -20,12 +20,16 @@
         <h6>You have listened to</h6>
         <h1 class="my-1 mt-0 pt-0">@Model.TotalMinutes minutes</h1>
 
-        <p>This was over a period of <b>all time</b>.</p>
+        <p>
+            over a period of <b>@Model.TimeFrame</b>.
+            <br />
+            <span class="text-muted"> (@Model.FromWhen.ToString("dd/MM/yyyy") - @Model.ToWhen.ToString("dd/MM/yyyy")) </span>
+        </p>
 
         <br /><br /><br />
         <p>
 
-            <a asp-action="TopScrobblesIndex" asp-controller="LastMinutes" asp-route-Username="@Model.Username" class="link-light text-decoration-none goldhover">View your <b>Top Scrobbles</b></a>
+            <a asp-action="TopScrobblesIndex" asp-controller="LastMinutes" asp-route-Username="@Model.Username" class="link-light text-decoration-none goldhover">View your <b>Top Minutes</b></a>
            <br />
             @if (Model.BadScrobbles.Count() != 0)
             {
@@ -41,7 +45,7 @@
         <p>
             @if (Model.CanRefresh)
             {
-                <a asp-action="Refresh" asp-controller="LastMinutes" asp-route-Username="@Model.Username" class=" link-secondary text-decoration-none goldhover "><b>Delete Results..</a>
+                <a asp-action="Refresh" asp-controller="LastMinutes" asp-route-Username="@Model.Username" class=" link-secondary text-decoration-none goldhover "><b>Delete Results</a>
             } else
             {
                 <span class="text-muted">You can only refresh in @Model.Cooldown minutes <br /> (@Model.CooldownText)</span>

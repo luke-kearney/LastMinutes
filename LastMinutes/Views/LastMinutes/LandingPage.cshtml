@@ -3,7 +3,8 @@
 *@
 @{
     ViewData["Title"] = "Home";
-    bool SignedIn = false;
+    bool SignedIn = ViewBag.SignedIn;
+    string Username = ViewBag.Username;
 }
 
 
@@ -19,7 +20,13 @@
 
             <form asp-action="CheckMinutes" asp-controller="LastMinutes">
 
-                <input class="form-control" type="text" name="username" placeholder="Last.FM Username" required />
+                @if (string.IsNullOrEmpty(Username) && SignedIn == false)
+                {
+                    <input class="form-control" type="text" name="username" placeholder="Last.FM Username" required />
+                } else
+                {
+                    <input class="form-control" type="text" name="username" placeholder="Last.FM Username" value="@Username" required />                
+                }
 
                 <br />
                 <div class="col d-flex flex-wrap justify-content-between">
@@ -58,7 +65,13 @@
 
 
         <p>
-            <a asp-action="SignIn" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Sign In <span class="text-muted">(for special privileges)</span></a>
+            @if (!SignedIn)
+            {
+                <a asp-action="SignInIndex" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Sign In <span class="text-muted">(for special privileges)</span></a>
+            } else
+            {
+                <a asp-action="SignOut" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Sign Out</a>
+            }
             <br>
             <a asp-action="Faq" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Frequently Asked Questions</a>
 

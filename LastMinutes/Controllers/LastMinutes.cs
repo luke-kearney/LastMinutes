@@ -33,6 +33,16 @@ namespace LastMinutes.Controllers
 
         public IActionResult Index()
         {
+            ViewBag.SignedIn = false;
+            ViewBag.Username = "";
+
+            string LoginCookie = Request.Cookies["Username"];
+            if (LoginCookie != null )
+            {
+                ViewBag.SignedIn = true;
+                ViewBag.Username = LoginCookie;
+            }
+
             return View("LandingPage");
         }
 
@@ -84,7 +94,11 @@ namespace LastMinutes.Controllers
                     TotalMs = Result.TotalPlaytime,
 
                     TopScrobbles = JsonConvert.DeserializeObject<List<Scrobble>>(Result.AllScrobbles) ?? new List<Scrobble>(),
-                    BadScrobbles = JsonConvert.DeserializeObject<List<Scrobble>>(Result.BadScrobbles) ?? new List<Scrobble>()
+                    BadScrobbles = JsonConvert.DeserializeObject<List<Scrobble>>(Result.BadScrobbles) ?? new List<Scrobble>(),
+
+                    TimeFrame = Result.TimeFrame,
+                    FromWhen = Result.FromWhen,
+                    ToWhen = Result.ToWhen
                 };
 
                 // Check if it's been long enough to requeue 
@@ -136,7 +150,11 @@ namespace LastMinutes.Controllers
                     TotalMs = Result.TotalPlaytime,
 
                     TopScrobbles = JsonConvert.DeserializeObject<List<Scrobble>>(Result.AllScrobbles) ?? new List<Scrobble>(),
-                    BadScrobbles = JsonConvert.DeserializeObject<List<Scrobble>>(Result.BadScrobbles) ?? new List<Scrobble>()
+                    BadScrobbles = JsonConvert.DeserializeObject<List<Scrobble>>(Result.BadScrobbles) ?? new List<Scrobble>(),
+
+                    TimeFrame = Result.TimeFrame,
+                    FromWhen = Result.FromWhen,
+                    ToWhen = Result.ToWhen
                 };
 
                 // Check if it's been long enough to requeue 
@@ -188,7 +206,11 @@ namespace LastMinutes.Controllers
                     TotalMs = Result.TotalPlaytime,
 
                     TopScrobbles = JsonConvert.DeserializeObject<List<Scrobble>>(Result.AllScrobbles) ?? new List<Scrobble>(),
-                    BadScrobbles = JsonConvert.DeserializeObject<List<Scrobble>>(Result.BadScrobbles) ?? new List<Scrobble>()
+                    BadScrobbles = JsonConvert.DeserializeObject<List<Scrobble>>(Result.BadScrobbles) ?? new List<Scrobble>(),
+
+                    TimeFrame = Result.TimeFrame,
+                    FromWhen = Result.FromWhen,
+                    ToWhen = Result.ToWhen
                 };
 
                 // Check if it's been long enough to requeue 
@@ -220,10 +242,11 @@ namespace LastMinutes.Controllers
                 if (await _queue.RemoveResults(Username))
                 {
                     // results removed, now requeue
-                    if (await _queue.AddUsernameToQueue(Username))
+                    /*if (await _queue.AddUsernameToQueue(Username))
                     {
                         return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = Username });
-                    }
+                    }*/
+                    return RedirectToAction("ResultsIndex", "LastMinutes", new {Username = Username});
                 }
 
                 return Content("Something went wrong while removing or requeuing your username. Please try again or contact us.");
@@ -239,8 +262,6 @@ namespace LastMinutes.Controllers
             
 
         }
-
-
 
         [HttpPost]
         [Route("/LastMinutes/CheckMinutes")]
@@ -299,7 +320,48 @@ namespace LastMinutes.Controllers
         }
 
 
-        
+        [Route("go/signin/failure")]
+        public IActionResult SignInFailure()
+        {
+            return View("SignInInfo");
+        }
+
+
+        [Route("/SignIn")]
+        public IActionResult SignInIndex()
+        {
+            return View("SignIn");
+        }
+
+        [HttpPost]
+        [Route("/go/signin")]
+        public async Task<IActionResult> SignIn(IFormCollection col)
+        {
+            string Username = col["username"].ToString();
+            if (string.IsNullOrEmpty(Username)) { return Content("No Username Supplied!"); }
+
+            if (_queue.IsSpecialAccount(Username))
+            {
+                CookieOptions option = new CookieOptions();
+                option.Expires = DateTime.Now.AddDays(31);
+
+                Response.Cookies.Append("Username", Username, option);
+
+                return RedirectToAction("Index", "LastMinutes");
+            } else
+            {
+                return RedirectToAction("SignInFailure", "LastMinutes");
+            }
+
+        }
+
+        [Route("go/signout")]
+        public async Task<IActionResult> SignOut()
+        {
+            Response.Cookies.Delete("Username");
+            return RedirectToAction("Index", "LastMinutes");
+
+        }
 
 
     }

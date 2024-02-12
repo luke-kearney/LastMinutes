@@ -48,8 +48,11 @@
                         <br />
                         <h6>You have listened to</h6>
                         <h1 class="my-1 mt-0 pt-0">@Model.TotalMinutes minutes</h1>
-
-                        <p>This was over a period of <b>all time</b>.</p>
+                        <p>
+                            over a period of <b>@Model.TimeFrame</b>.
+                            <br />
+                            <span class="text-muted"> (@Model.FromWhen.ToString("dd/MM/yyyy") - @Model.ToWhen.ToString("dd/MM/yyyy")) </span>
+                        </p>
                     </div>
                 }
 

@@ -15,6 +15,10 @@
         public int Cooldown { get; set; }
         public string CooldownText { get; set; } = string.Empty;
 
+        public string TimeFrame { get; set; } = string.Empty;
+        public DateTime FromWhen { get; set; }
+        public DateTime ToWhen { get; set; }
+
     }
 
 }

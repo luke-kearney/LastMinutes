@@ -1,0 +1,46 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewData["Title"] = "Sign-in failure";
+}
+<div class="row d-flex justify-content-center px-5">
+    <div class="col-12 col-lg-5 text-white ">
+        <h3>Failed to sign in</h3>
+    </div>
+</div>
+
+<div class="row d-flex justify-content-center">
+    <div class="col-12 col-lg-5 p-2 px-5 text-white" style="overflow-y: auto;  overflow-x: hidden">
+        <p class="my-4">
+
+            <div class="row my-4">
+                <h5>You need to have your Last.FM account registered on LastMinutes in order to sign in!</h5>
+                <span>
+                    <br />
+
+                    At the moment, only a hand full of people have a <i>special account</i> on LastMinutes. These are mostly my friends.
+                    <br /><br />
+                    But don't worry, you're not missing out on much- 
+                    <br />All having a <i>special account</i> lets you do is:
+                    
+                    <ul>
+                        <li>Skip the cooldown between results</li>
+                        <li>View your minutes over a more broad time frame (such as this week, or last month, or all time, for example)</li>
+                    </ul>
+
+                    <br />See? Not much.
+
+                </span>
+                    
+            </div>
+
+            Read more in the <a asp-action="Faq" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">FAQ</a>.
+
+        </p>
+
+
+
+
+    </div>
+</div>

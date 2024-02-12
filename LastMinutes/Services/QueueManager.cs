@@ -25,6 +25,8 @@ namespace LastMinutes.Services
         public Task<int> Cooldown(string username);
 
         public string GetBadScrobbleText(int count);
+
+        public bool IsSpecialAccount(string username);
     }
 
 
@@ -284,6 +286,17 @@ namespace LastMinutes.Services
             else
             {
                 return "a ton of bad scrobbles :(";
+            }
+        }
+
+        public bool IsSpecialAccount(string username)
+        {
+            if (LastFmFriends.Contains(username.ToUpper()))
+            {
+                return true;
+            } else
+            {
+                return false;
             }
         }
     }
