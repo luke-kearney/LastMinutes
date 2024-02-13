@@ -24,6 +24,7 @@
         <div class="col my-4">
 
             <h5>Enter your Last.FM Username Below</h5>
+            <p>to see how many minutes you've listened to!</p>
 
             <form asp-action="CheckMinutes" asp-controller="LastMinutes">
 
@@ -42,9 +43,9 @@
                         @if (SignedIn)
                         {
                             <select class="form-select form-select-sm" name="Mode" aria-label="Over Time">
-                                <option value="1" selected>Over All Time</option>
+                                <option value="1">Over All Time</option>
                                 <option value="2">Over The Last Week</option>
-                                <option value="3">Over The Last Month</option>
+                                <option value="3" selected>Over The Last Month</option>
                                 <option value="4">Over The Last Year</option>
                                 <option value="5">This Week</option>
                                 <option value="6">This Month</option>
@@ -52,13 +53,21 @@
                             </select>
                         } else
                         {
-                            <input type="hidden" name="Mode" value="3"/>
+                            <select class="form-select form-select-sm" name="Mode" aria-label="Over Time" disabled>
+                                <option value="1">Over All Time</option>
+                                <option value="2">Over The Last Week</option>
+                                <option value="3" selected>Over The Last Month</option>
+                                <option value="4">Over The Last Year</option>
+                                <option value="5">This Week</option>
+                                <option value="6">This Month</option>
+                                <option value="7">This Year</option>
+                            </select>
                         }
                     </div>
 
 
                     <div class="col-12 col-md-4 d-grid gap-2 my-2">
-                        <button type="submit" class="btn btn-outline-light mb-3">Submit</button>
+                        <button type="submit" class="btn btn-outline-light mb-3">View Results</button>
                     </div>
 
                 </div>

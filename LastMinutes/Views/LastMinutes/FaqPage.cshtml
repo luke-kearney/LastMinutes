@@ -20,20 +20,27 @@
 
 <div class="col col-md-11 col-lg-10 d-flex px-0 mx-2 justify-content-center mx-auto my-auto">
     <div class="p-2 px-1 text-white">
-     
+
+        <div class="row my-4">
+            <h5>What does this website do?</h5>
+            <span>
+                TL;DR: This website will tell you how many minutes you have listened to over the past 31 days using data provided by your Last.FM account.
+            </span>
+        </div>
 
         <div class="row my-4">
             <h5>How long will it take?</h5>
             <span>
-                That entirely depends on how many scrobbles you have :)<br /><br />
-                This app currently caches every single track which it can find a runtime for, which means that the more this app is used, the less time it will take. <br /> <br> Current Track Cache: <b>@Model.TotalCachedTracks</b> tracks.
+                That entirely depends on how many scrobbles you have :)<br />
+                This app currently caches every single track which it can find a runtime for, which means that the more this app is used, the less time it will take. <br /> <br> 
+                Current Track Cache: <b>@Model.TotalCachedTracks</b> tracks.
             </span>
         </div>
 
         <div class="row my-5">
-            <h5>Where do we get the track data from?</h5>
+            <h5>Where do you get the track data from?</h5>
             <span>
-                Currently, we use Deezer as our main source followed by Spotify and MusicBrainz. Whichever scrobbles Deezer can not find, will then be searched for on Spotify and then MusicBrainz.
+                Currently, I use Deezer as the main source followed by Spotify. Whichever tracks Deezer can not find, will then be searched for on Spotify.
             </span>
         </div>
 
@@ -47,16 +54,17 @@
         <div class="row my-5">
             <h5>What are my <i>bad scrobbles</i>?</h5>
             <span>
-                Any scrobbles which we cannot find a runtime for and that have a play count of more than 5 will be flagged as a <i>bad scrobble</i>.<br /><br />
-                Sometimes scrobbles may not match results found in our data sources. Also, API requests will fail if some tracks have stupidly long names (I'm looking at you Surfjan Stevens!).
-                <br /><br />Eventually, if much demand is met, it will be possible to manually add bad scrobbles to the track cache.
+                Any scrobbles which the website cannot find a runtime for and that have a play count of more than 3 will be flagged as a <i>bad scrobble</i>.<br /><br />
+                Sometimes scrobbles may not match results found in our data sources. Also, API requests will fail if some tracks have stupidly long names (I'm looking at you Surfjan Stevens!). Eventually, if much demand is met, it will be possible to manually add bad scrobbles to the track cache.
+
             </span>
         </div>
 
         <div class="row my-5">
             <h5>Why can it take so long?</h5>
             <span>
-                This application only processes one username at a time. This is because of API rate limiting from Spotify and MusicBrainz. To be safe and prevent complete API cooldowns, this application only makes around one request per second.<br /><br />
+                Unlike many other Last.FM tools, this website has to make requests to Spotify using a private API key- meaning all computing has to be done on the web server instead of your local device.
+                Also, this tool only processes one username at a time. This is because of API rate limiting from Spotify and MusicBrainz. To be safe and prevent complete API cooldowns, this application only makes around one request per second.<br /><br />
                 If this web app is met with much demand, then perhaps in the future I can implement synchronous queue processing. This is just a personal/hobby project of mine and I cannot afford to spend full time on it.
             </span>
         </div>
@@ -64,10 +72,20 @@
         <div class="row my-5">
             <h5>What <i>special privileges</i> do I get for signing in?</h5>
             <span>
-                Only accounts which I specify may sign in to access special features. This allows you to view your minutes over various amounts of time- compared to the default (last 31 days). You will also be exempt from the cooldown.
-                <br />
-                <br />
-                Currently, only my friends have accounts with special privileges. I'm not sure if this is something I'll ever change in the future.
+                Only accounts which I specify may sign in to access special features. This allows you to view your minutes over many different set time frames:
+                <ul class="my-3">
+                    <li>Over The Last Week</li>
+                    <li>Over The Last Month</li>
+                    <li>Over The Last Year</li>
+                    <li>Over All Time</li>
+                    <li>This Week</li>
+                    <li>This Month</li>
+                    <li>This Year</li>
+                    <li class="text-muted">(it also lets you skip the 24h cooldown)</li>
+                </ul>
+
+                Currently, only my friends have accounts with special privileges. I'm not sure if this is something I'll ever change in the future.<br />
+                In other words, I've spent a lot of time on this website and I'm not sure if I want to introduce a paywall for features.
             </span>
         </div>
 
@@ -75,7 +93,7 @@
             <h5>How can I contact you?</h5>
             <span>
                 You can send me an email to this address:<br />
-                <a href="mailto:contact@lektech.co.za" class="link-light text-decoration-none goldhover fw-bold">contact@lektech.co.za</a>
+                <a href="mailto:contact@mrdawg.co.za" class="link-light text-decoration-none goldhover fw-bold">contact@mrdawg.co.za</a>
             </span>
         </div>
 

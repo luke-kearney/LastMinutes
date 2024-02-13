@@ -103,5 +103,18 @@ namespace LastMinutes.Controllers
         }
 
 
+        [HttpGet]
+        [Route("commands/list")]
+        public IActionResult CommandsList()
+        {
+            string output = "List of API calls: <br><br>";
+            output += "api/queue/getLength - Returns the length of the queue. <br>";
+            output += "api/cache/getTotalTracks - Returns the total amount of tracks in the cache. <br>";
+            output += "api/cache/addTrackToCache?artist={}&trackName={}&runtimeMs={}&apiKey={} - Adds a track to the cache manually. Requires special query parameters. <br>";
+            output += "api/results/getAll - Returns all currently saved results. <br>";
+
+            return Content( output, "text/html");
+        }
+
     }
 }

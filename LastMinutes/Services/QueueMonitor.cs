@@ -343,7 +343,7 @@ namespace LastMinutes.Services
                                 .ToList();
 
                             List<Scrobble> BadScrobbles = UncachedScrobbles
-                                .Where(kvp => kvp.Count > 5)
+                                .Where(kvp => kvp.Count > 3)
                                 .OrderByDescending(kvp => kvp.Count)
                                 .Take(25)
                                 .ToList();
