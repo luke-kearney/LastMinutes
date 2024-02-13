@@ -129,7 +129,7 @@ namespace LastMinutes.Services
 
         public async Task<bool> RemoveResults(string username)
         {
-            Models.LMData.Results results = await _lmdata.Results.FirstOrDefaultAsync();
+            Models.LMData.Results results = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username.ToUpper() ==  username.ToUpper());
             if (results == null) { return false;}
 
             _lmdata.Results.Remove(results);
