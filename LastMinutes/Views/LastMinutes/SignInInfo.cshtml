@@ -2,19 +2,26 @@
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
 @{
-    ViewData["Title"] = "Sign-in failure";
+    ViewData["Title"] = "Sign In Failed";
+    ViewData["MetaTagRobots"] = "noindex";
 }
-<div class="row d-flex justify-content-center px-5">
+
+<div class="col-12 col-md-5 mt-auto mb-0">
+    <h1><a asp-action="Index" asp-controller="LastMinutes" class="text-decoration-none link-light" onmouseover="this.style.color='gold'" onmouseout="this.style.color='white'">LastMinutes</a></h1>
+</div>
+
+
+<div class="row d-flex justify-content-center mt-0 mb-0">
     <div class="col-12 col-lg-5 text-white ">
         <h3>Failed to sign in</h3>
     </div>
 </div>
 
-<div class="row d-flex justify-content-center">
-    <div class="col-12 col-lg-5 p-2 px-5 text-white" style="overflow-y: auto;  overflow-x: hidden">
-        <p class="my-4">
+<div class="row d-flex justify-content-center mb-auto mt-0">
+    <div class="col-12 col-lg-8 p-2 px-5 text-white" style="overflow-y: auto;  overflow-x: hidden">
+        <p class="">
 
-            <div class="row my-4">
+            <div class="row">
                 <h5>You need to have your Last.FM account registered on LastMinutes in order to sign in!</h5>
                 <span>
                     <br />

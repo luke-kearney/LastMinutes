@@ -1,0 +1,45 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewData["Title"] = "Error 503";
+
+    ViewData["MetaTagRobots"] = "noindex";
+
+}
+
+
+<div class="col-12 col-md-5 mt-auto mb-0">
+    <h1><a asp-action="Index" asp-controller="LastMinutes" class="text-decoration-none link-light" onmouseover="this.style.color='gold'" onmouseout="this.style.color='white'">LastMinutes</a></h1>
+</div>
+
+<div class="col col-md-8 d-flex justify-content-center mt-0 mb-auto">
+
+
+    <div class="col-12 col-lg-6 p-2 text-white">
+
+
+        <div class="col my-4">
+
+            <h2>Error 503</h2>
+
+            <p>
+                Service Unavailable. Please try again later.<br /><br />If this continues to happen, please contact me.
+            </p>
+
+        </div>
+        
+
+
+        <p>
+
+            <a asp-action="Index" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Go Home</a><br>
+            <a asp-action="Faq" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Frequently Asked Questions</a>
+
+        </p>
+
+        
+
+    </div>
+
+</div>

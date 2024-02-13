@@ -3,17 +3,11 @@
 *@
 @model LastMinutes.Models.ViewModels.ResultsViewModel
 @{
-    ViewData["Title"] = "Your Minutes";
+    ViewData["Title"] = $"{Model.Username}'s Bad Scrobbles";
 }
 
 
 <div class="col d-flex justify-content-center">
-
-
-
-    
-
-    
 
     <div class="col-12 col-md-10 p-2 text-white">
         <h4 class="my-3">You have @Model.BadScrobbleText</h4>
@@ -31,7 +25,5 @@
 
         <h6><a asp-action="ResultsIndex" asp-controller="LastMinutes" asp-route-Username="@Model.Username" class="link-light text-decoration-none goldhover">Go Back</a></h6>
     </div>
-
-
 
 </div>

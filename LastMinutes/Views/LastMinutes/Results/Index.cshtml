@@ -3,7 +3,7 @@
 *@
 @model LastMinutes.Models.ViewModels.ResultsViewModel
 @{
-    ViewData["Title"] = "Your Minutes";
+    ViewData["Title"] = $"{Model.Username}'s Minutes";
     ViewData["MainPage"] = "true";
 }
 
@@ -23,7 +23,13 @@
         <p>
             over a period of <b>@Model.TimeFrame</b>.
             <br />
-            <span class="text-muted"> (@Model.FromWhen.ToString("dd/MM/yyyy") - @Model.ToWhen.ToString("dd/MM/yyyy")) </span>
+            @if (Model.TimeFrame != "all time")
+            {
+                <span class="text-muted"> (@Model.FromWhen.ToString("dd/MM/yyyy") - @Model.ToWhen.ToString("dd/MM/yyyy")) </span>
+            } else
+            {
+                <span class="text-muted">(since you started scrobbling)</span>
+            }
         </p>
 
         <br /><br /><br />

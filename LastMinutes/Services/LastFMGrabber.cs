@@ -74,7 +74,7 @@ namespace LastMinutes.Services
             {
                 HttpResponseMessage response = await client.GetAsync(url);
                 int Retries = 0;
-                while (!response.IsSuccessStatusCode && Retries > 5) 
+                while (!response.IsSuccessStatusCode && Retries < 5) 
                 {
                     response = await client.GetAsync(url);
                     Retries++;

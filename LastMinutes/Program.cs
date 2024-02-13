@@ -12,6 +12,28 @@ ConfigurationManager configuration = builder.Configuration;
 configuration.AddJsonFile("AppData/dataSettings.json");
 configuration.AddJsonFile("AppData/apiConnections.json");
 
+bool ConfigPass = true;
+
+if (!CheckConfig("LastFMApiUrl")) { ConfigPass = false; }
+if (!CheckConfig("LastFMApiKey")) { ConfigPass = false; }
+
+if (!CheckConfig("SpotifyApiUrl")) { ConfigPass = false; }
+if (!CheckConfig("SpotifyAccUrl")) { ConfigPass = false; }
+if (!CheckConfig("SpotifyClientId")) { ConfigPass = false; }
+if (!CheckConfig("SpotifyClientSecret")) { ConfigPass = false; }
+
+if (!CheckConfig("MusicBrainzApiUrl")) { ConfigPass = false; }
+if (!CheckConfig("MusicBrainzUserAgent")) { ConfigPass = false; }
+
+if (!CheckConfig("DeezerApiUrl")) { ConfigPass = false; }
+
+if (!CheckConfig("LastMinutesApiKey")) { ConfigPass = false; }
+
+if (!ConfigPass)
+{
+    throw new InvalidOperationException("Configuration error: could not find a configuration value in apiConnections.json. Please ensure it exists and has the correct format.");
+}
+
 #endregion
 
 
@@ -34,7 +56,7 @@ switch (DB_Type)
 #endregion
 
 
-#region Services
+#region Invoke Services
 
 // Add Data Grabbers
 builder.Services.AddTransient<ILastFMGrabber, LastFMGrabber>();
@@ -68,6 +90,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseStatusCodePagesWithReExecute("/Error/{0}");
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
@@ -81,3 +105,19 @@ app.MapControllerRoute(
 
 
 app.Run();
+
+
+
+#region Custom Methods
+bool CheckConfig(string value)
+{
+    string gotValue = configuration.GetValue<string>(value) ?? string.Empty;
+    if (string.IsNullOrEmpty(gotValue))
+    {
+        return false;
+    } else
+    {
+        return true;
+    }
+}
+#endregion

@@ -4,21 +4,48 @@
 @model LastMinutes.Models.ViewModels.PendingViewModel
 @{
     ViewData["Title"] = "Processing";
+    ViewData["MetaTagRobots"] = "noindex";
+
+    string[] cuteMessages = new string[]
+    {
+                "Hiiii Kiara :)",
+                "Hmm, this Last.FM account is the best one yet :)",
+                "Only a few more days left until Valentines Day <3",
+                "Wow, you're looking gorgeous ;)",
+    };
+
+    Random random = new Random();
+    int index = random.Next(0, cuteMessages.Length);
+
 }
 
+<div class="col-12 col-md-5 mt-auto mb-0">
+    <h1><a asp-action="Index" asp-controller="LastMinutes" class="text-decoration-none link-light" onmouseover="this.style.color='gold'" onmouseout="this.style.color='white'">LastMinutes</a></h1>
+</div>
 
-<div class="col my-3 d-flex justify-content-center">
+<div class="col col-md-8 d-flex justify-content-center mt-0 mb-auto">
 
 
-    <div class="col-12 col-lg-4 p-2 text-white">
+    <div class="col-12 col-lg-6 p-2 text-white">
 
 
         <h3>Hey, @Model.Username!</h3>
         <p>
-            Your minutes are being tallied :)<br /><br />
+            Your minutes are being tallied.<br /><br />
+
+            @if (Model.Username.ToUpper() == "KIARA_DONUT")
+            {
+                <h6>@cuteMessages[index]</h6>
+
+                <br />
+
+                <br />
+            }
+
 
             Server is <b>@Model.ServerStatus</b><br />
-            Please check back in a couple of hours.<br />
+            Please check back in a little bit.<br /><br />
+            <span class="text-muted">This page will automatically refresh</span><br /><br />
             <a asp-action="Faq" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light" onmouseover="this.style.color='gold'" onmouseout="this.style.color='white'">Read more..</a>
 
         </p>
@@ -28,3 +55,17 @@
     </div>
 
 </div>
+
+@section Scripts{
+    <script>
+        // Function to reload the page
+        function reloadPage() {
+            location.reload(); // Reload the page
+        }
+
+        // Call the reloadPage function every 15 seconds
+        setInterval(reloadPage, 5000); // 15000 milliseconds = 15 seconds
+    </script>
+
+
+}

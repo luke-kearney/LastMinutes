@@ -1,5 +1,7 @@
 ﻿using LastMinutes.Data;
+using LastMinutes.Models.LMData;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.Contracts;
 using System.Reflection.Metadata.Ecma335;
 
 namespace LastMinutes.Services
@@ -14,6 +16,7 @@ namespace LastMinutes.Services
 
         public int GetLength();
 
+        public Task<List<Models.LMData.Results>> GetAllResults();
         public int GetEta();
         public string ConvertMinutesToWordsLong(int minutes); // returns the int with 'minutes' appended
         //public string ConvertMinutesToWordsShort(int minutes); // returns long time format; 1 hour and 25 minutes
@@ -27,6 +30,8 @@ namespace LastMinutes.Services
         public string GetBadScrobbleText(int count);
 
         public bool IsSpecialAccount(string username);
+
+        public string ConvertMsToMinutes(long durationMs);
     }
 
 
@@ -137,6 +142,21 @@ namespace LastMinutes.Services
                 return false;
             }
 
+        }
+
+        public async Task<List<Models.LMData.Results>> GetAllResults()
+        {
+            List<Models.LMData.Results> allResults = await _lmdata.Results.ToListAsync();
+            return allResults ?? new List<Models.LMData.Results>();
+        }
+
+        public string ConvertMsToMinutes(long durationMs)
+        {
+            // Convert milliseconds to minutes
+            long totalMinutes = durationMs / (1000 * 60);
+
+            // Return the result as a string
+            return totalMinutes.ToString();
         }
 
         public int GetLength()

@@ -3,15 +3,22 @@
 *@
 @{
     ViewData["Title"] = "Home";
-    bool SignedIn = ViewBag.SignedIn;
+    bool SignedIn = ViewBag.SignedIn ?? false;
     string Username = ViewBag.Username;
+
+    ViewData["MetaTagDescription"] = "Use LastMinutes to check your total listening time in minutes from your LastFM account!";
+
 }
 
 
-<div class="col d-flex justify-content-center mt-5">
+<div class="col-12 col-md-5 mt-auto mb-0">
+    <h1><a asp-action="Index" asp-controller="LastMinutes" class="text-decoration-none link-light" onmouseover="this.style.color='gold'" onmouseout="this.style.color='white'">LastMinutes</a></h1>
+</div>
+
+<div class="col col-md-8 d-flex justify-content-center mt-0 mb-auto">
 
 
-    <div class="col-12 col-lg-4 p-2 text-white">
+    <div class="col-12 col-lg-6 p-2 text-white">
 
 
         <div class="col my-4">

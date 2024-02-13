@@ -6,6 +6,18 @@
     <title>@ViewData["Title"] - LastMinutes</title>
     <link rel="stylesheet" href="~/css/bootstrap/bootstrap.css" />
 
+    <meta name="robots" content="noindex" />
+
+    <!-- Start Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon/favicon-16x16.png" />
+
+    <link rel="manifest" href="/img/favicon/manifest.json" />
+    <meta name="theme-color" content="" />
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/favicon/apple-touch-icon.png" />
+    <!-- End Favicons -->
+
     <style>
         /* width */
         ::-webkit-scrollbar {
@@ -50,8 +62,14 @@
                         <h1 class="my-1 mt-0 pt-0">@Model.TotalMinutes minutes</h1>
                         <p>
                             over a period of <b>@Model.TimeFrame</b>.
-                            <br />
-                            <span class="text-muted"> (@Model.FromWhen.ToString("dd/MM/yyyy") - @Model.ToWhen.ToString("dd/MM/yyyy")) </span>
+                            <br />@if (Model.TimeFrame != "all time")
+                            {
+                                <span class="text-muted"> (@Model.FromWhen.ToString("dd/MM/yyyy") - @Model.ToWhen.ToString("dd/MM/yyyy")) </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">(since you started scrobbling)</span>
+                            }
                         </p>
                     </div>
                 }

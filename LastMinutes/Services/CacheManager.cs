@@ -9,6 +9,9 @@ namespace LastMinutes.Services
     public interface ICacheManager
     {
         public Task<bool> AddTrackToCache(Tracks track);
+
+        public Task<int> GetCacheSize();
+
     }
 
 
@@ -20,6 +23,12 @@ namespace LastMinutes.Services
             LMData lmdata) 
         { 
             _lmdata = lmdata;
+        }
+
+        public async Task<int> GetCacheSize()
+        {
+            List<Models.LMData.Tracks> allTracks = await _lmdata.Tracks.ToListAsync();
+            return allTracks?.Count() ?? 0;
         }
 
         public async Task<bool> AddTrackToCache(Tracks track)

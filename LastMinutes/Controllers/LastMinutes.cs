@@ -359,9 +359,41 @@ namespace LastMinutes.Controllers
         public async Task<IActionResult> SignOut()
         {
             Response.Cookies.Delete("Username");
-            return RedirectToAction("Index", "LastMinutes");
+            return RedirectToAction("SignInIndex", "LastMinutes");
 
         }
+
+        #region Errors
+
+        [Route("Error/400")]
+        public IActionResult ErrorBadRequest()
+        {
+            Response.StatusCode = 400;
+            return View("Errors/400");
+        }
+
+        [Route("Error/404")]
+        public IActionResult ErrorNotFound()
+        {
+            Response.StatusCode = 404;
+            return View("Errors/404");
+        }
+
+        [Route("Error/500")]
+        public IActionResult ErrorInternalServerError()
+        {
+            Response.StatusCode = 500;
+            return View("Errors/500");
+        }
+
+        [Route("Error/429")]
+        public IActionResult ErrorTooManyRequests()
+        {
+            Response.StatusCode = 429;
+            return View("Errors/429");
+        }
+
+        #endregion
 
 
     }
