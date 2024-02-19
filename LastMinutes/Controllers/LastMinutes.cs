@@ -34,6 +34,8 @@ namespace LastMinutes.Controllers
             _spotify = spotify;
         }
 
+        #region Standard Logic
+
         public IActionResult Index()
         {
             ViewBag.SignedIn = false;
@@ -366,6 +368,8 @@ namespace LastMinutes.Controllers
 
         }
 
+        #endregion
+
         #region Errors
 
         [Route("Error/400")]
@@ -394,6 +398,13 @@ namespace LastMinutes.Controllers
         {
             Response.StatusCode = 429;
             return View("Errors/429");
+        }
+
+        [Route("Error/418")]
+        public IActionResult ErrorImATeapot()
+        {
+            Response.StatusCode = 418;
+            return View("Errors/418");
         }
 
         #endregion
