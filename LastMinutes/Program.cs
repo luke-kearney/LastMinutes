@@ -3,6 +3,7 @@ using LastMinutes.Services;
 using Microsoft.AspNetCore.Server.IIS.Core;
 using Microsoft.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
+using LastMinutes.ActionFilters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,29 @@ if (!ConfigPass)
 {
     throw new InvalidOperationException("Configuration error: could not find a configuration value in apiConnections.json or SpecialAccounts.json. Please ensure it exists and has the correct format.");
 }
+
+#endregion
+
+
+#region App Version Control
+
+/* Version Control
+ *  Y MM DD -tag
+ *  1 07 12
+ *  Y = Year of development (starting from 1 meaning first year of development)
+ *  MM = Month of version release
+ *  DD = Day of version release
+ *  -tag = Used if multiple releases are made per day (example: -a, -b, -test)
+ */
+
+string AppVersion = "10219";
+string AppStage = "Alpha";
+
+configuration.AddInMemoryCollection(new Dictionary<string, string>
+{
+    { "AppVersion", AppVersion },
+    { "AppStage", AppStage }
+});
 
 #endregion
 
@@ -76,9 +100,14 @@ builder.Services.AddTransient<ICacheManager, CacheManager>();
 // Add custom queue controller
 builder.Services.AddHostedService<QueueMonitor>();
 
+builder.Services.AddScoped<VersionAppending>();
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<VersionAppending>();
+});
+
 builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 
 #endregion

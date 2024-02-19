@@ -14,9 +14,12 @@ using LastMinutes.Data;
 using Microsoft.EntityFrameworkCore;
 using LastMinutes.Models.LMData;
 using LastMinutes.Models;
+using LastMinutes.ActionFilters;
 
 namespace LastMinutes.Controllers
 {
+
+    [ServiceFilter(typeof(VersionAppending))]
     public class LastMinutes : Controller
     {
         private readonly IQueueManager _queue;
