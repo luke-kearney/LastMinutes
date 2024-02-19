@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
 configuration.AddJsonFile("AppData/dataSettings.json");
 configuration.AddJsonFile("AppData/apiConnections.json");
+configuration.AddJsonFile("AppData/specialAccounts.json", optional: true, reloadOnChange: true);
 
 bool ConfigPass = true;
 
@@ -29,9 +30,11 @@ if (!CheckConfig("DeezerApiUrl")) { ConfigPass = false; }
 
 if (!CheckConfig("LastMinutesApiKey")) { ConfigPass = false; }
 
+if (!CheckConfig("SpecialAccounts")) { ConfigPass = false; }
+
 if (!ConfigPass)
 {
-    throw new InvalidOperationException("Configuration error: could not find a configuration value in apiConnections.json. Please ensure it exists and has the correct format.");
+    throw new InvalidOperationException("Configuration error: could not find a configuration value in apiConnections.json or SpecialAccounts.json. Please ensure it exists and has the correct format.");
 }
 
 #endregion
@@ -80,6 +83,9 @@ builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 
 #endregion
 
+
+#region App Configuration
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -106,6 +112,7 @@ app.MapControllerRoute(
 
 app.Run();
 
+#endregion
 
 
 #region Custom Methods

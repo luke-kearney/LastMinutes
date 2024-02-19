@@ -1,6 +1,7 @@
 ﻿using LastMinutes.Data;
 using LastMinutes.Models.LMData;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System.Diagnostics.Contracts;
 using System.Reflection.Metadata.Ecma335;
 
@@ -38,12 +39,19 @@ namespace LastMinutes.Services
     public class QueueManager : IQueueManager
     {
         private readonly LMData _lmdata;
-        private readonly string[] LastFmFriends = { "MRDAWGZA", "MEEKOCS", "DYLANMOHLEH", "KIARA_DONUT", "ZERTICAN", "SIRJAK952" };
+        private readonly IConfiguration _config;
+        private readonly string[] LastFmFriends;
+        private int CooldownHours = 24;
 
         public QueueManager(
-            LMData lmdata) 
+            LMData lmdata,
+            IConfiguration config) 
         { 
             _lmdata = lmdata;
+            _config = config;
+
+            string lastFmFriendsRaw = _config.GetValue<string>("SpecialAccounts");
+            LastFmFriends = JsonConvert.DeserializeObject<string[]>(lastFmFriendsRaw) ?? new string[] { "MRDAWGZA", "KIARA_DONUT" }; 
         }
 
 
@@ -167,7 +175,7 @@ namespace LastMinutes.Services
         public string ConvertMinutesToWordsLong(int minutes)
         {
             if (minutes < 0)
-                throw new ArgumentException("Minutes cannot be negative.");
+                minutes = 0;
 
             if (minutes == 0)
                 return "0 minutes";
@@ -234,7 +242,7 @@ namespace LastMinutes.Services
         public async Task<bool> CanRefresh(string username)
         {
             // How long should the public cooldown be?
-            int HoursFrom = 24;
+            int HoursFrom = CooldownHours;
 
             // Format the string to upcase
             string lastFmUsername = username.ToUpper();
@@ -276,7 +284,7 @@ namespace LastMinutes.Services
             }
 
             TimeSpan TimePassed = DateTime.Now - Result.Created_On;
-            TimeSpan RemainingTime = TimeSpan.FromHours(24) - TimePassed;
+            TimeSpan RemainingTime = TimeSpan.FromHours(CooldownHours) - TimePassed;
             int hoursLeft = (int)Math.Ceiling(RemainingTime.TotalMinutes);
 
             return hoursLeft;
