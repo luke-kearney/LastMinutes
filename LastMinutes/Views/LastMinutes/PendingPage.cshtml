@@ -10,8 +10,8 @@
     {
                 "Hiiii Kiara :)",
                 "Wow! This is still the best Last.FM account yet :)",
-                "Happy Valentines Day, cutie!",
                 "Wow, you're still looking gorgeous ;)",
+                "I hope you're having a good day",
     };
 
     Random random = new Random();
@@ -31,7 +31,11 @@
 
         <h3>Hey, @Model.Username!</h3>
         <p>
-            Your minutes are being tallied.<br /><br />
+            Your minutes are being tallied.<br />
+            <i id="CurrentStatus"></i>
+            
+
+            <br /><br />
 
             @if (Model.Username.ToUpper() == "KIARA_DONUT")
             {
@@ -63,8 +67,31 @@
             location.reload(); // Reload the page
         }
 
+        @Html.Raw($"var username1 = '{Model.Username}'");
+
+        function getQueueStatus(username) {
+            // Make a GET request to the API endpoint
+            $.get(`/LastMinutes/api/queue/getStatus?username=${username}`)
+                .done(function (data) {
+                    // Update the inner HTML of the element with the response string
+                    if (data == "Done"){
+                        reloadPage();
+                    }
+                    $('#CurrentStatus').text(data);
+                })
+                .fail(function (jqXHR, textStatus, errorThrown) {
+                    // Update the inner HTML with an error message
+                    $('#CurrentStatus').text("Something went wrong, but we're still tallying your minutes!");
+                    console.error('AJAX request failed:', errorThrown);
+                });
+        }
+
+
+
         // Call the reloadPage function every 15 seconds
-        setInterval(reloadPage, 10000); // 15000 milliseconds = 15 seconds
+        //setInterval(reloadPage, 10000); // 15000 milliseconds = 15 seconds
+        setInterval(() => getQueueStatus(username1), 1000);
+
     </script>
 
 

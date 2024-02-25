@@ -10,6 +10,8 @@ namespace LastMinutes.Models.LMData
         public string Artist { get; set; } = string.Empty;
         public int Runtime { get; set; }
 
+        public string Source { get; set; } = string.Empty;
+
         public DateTime Date_Added { get; set; }
         public DateTime Last_Used { get; set; }
 

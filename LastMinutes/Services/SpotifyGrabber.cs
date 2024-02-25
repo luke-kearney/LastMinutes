@@ -92,7 +92,8 @@ namespace LastMinutes.Services
                                 Artist = artistName,
                                 Runtime = durationMsResult,
                                 Date_Added = DateTime.Now,
-                                Last_Used = DateTime.Now
+                                Last_Used = DateTime.Now,
+                                Source = "Spotify"
                             };
 
                             _lmdata.Tracks.Add(CacheTrack);
@@ -150,7 +151,7 @@ namespace LastMinutes.Services
                 var (t, a, ms) = await SearchForTrack(ScrobbleIn.TrackName, ScrobbleIn.ArtistName, authToken);
 
                 // If the rate limit is hit, run the track request that hit it one more time so that no track is excluded.
-                while (t == "SpotifyRateLimitHit" && a == "ErrorException")
+                while (t == "SpotifyRateLimitHit" || a == "ErrorException")
                 {
                     (t, a, ms) = await SearchForTrack(ScrobbleIn.TrackName, ScrobbleIn.ArtistName, authToken);
                 }

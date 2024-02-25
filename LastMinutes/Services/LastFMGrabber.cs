@@ -1,8 +1,11 @@
 ﻿using LastMinutes.Data;
 using LastMinutes.Models.LastFM;
+using LastMinutes.Models;
 using Newtonsoft.Json;
 using System.Text;
 using System.Xml.Linq;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using LastMinutes.Models.LMData;
 
 namespace LastMinutes.Services
 {
@@ -16,6 +19,8 @@ namespace LastMinutes.Services
 
         public Task<List<Dictionary<string, string>>> FetchScrobblesPerPage(string username, int page, string to, string from);
 
+        public Task<Scrobble> GetScrobbleLength(Scrobble scrobble);
+
         public Dictionary<(string, string), int> AccumulateTrackPlays(List<Dictionary<string, string>> AllScrobbles); 
 
     }
@@ -28,6 +33,8 @@ namespace LastMinutes.Services
 
         private string LastFMApiUrl = string.Empty;
         private string LastFMApiKey = string.Empty;
+
+        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(2);
 
         public LastFMGrabber(
             IServiceProvider serviceProvider,
@@ -123,6 +130,77 @@ namespace LastMinutes.Services
                     return new List<Dictionary<string, string>>();
                 }
 
+            }
+        }
+
+        public async Task<Scrobble> GetScrobbleLength(Scrobble scrobble)
+        {
+            await semaphoreSlim.WaitAsync();
+            try
+            {
+                string url = $"{LastFMApiUrl}?method=track.getInfo&api_key={LastFMApiKey}&format=json&artist={scrobble.ArtistName}&track={scrobble.TrackName}";
+
+                using (HttpClient client = new HttpClient())
+                {
+                    HttpResponseMessage response = await client.GetAsync(url);
+                    int Retries = 0;
+                    while (!response.IsSuccessStatusCode && Retries < 5)
+                    {
+                        response = await client.GetAsync(url);
+                        Retries++;
+                        Console.WriteLine($"[LastFM] '{scrobble.TrackName}' by '{scrobble.ArtistName}' - error occurred while getting scrobble runtime, retrying... ({Retries} / 5)");
+                    }
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        LastFmTrack TrackData = JsonConvert.DeserializeObject<LastFmTrack>(responseBody)!;
+
+                        scrobble.Runtime = 0;
+
+                        if (TrackData != null)
+                        {
+                            if (TrackData.track != null)
+                            {
+                                Int32.TryParse(TrackData.track.duration, out int foundRuntime);
+                                scrobble.Runtime = foundRuntime;
+
+                                if (foundRuntime != 0)
+                                {
+                                    using (var scope = _serviceProvider.CreateScope())
+                                    {
+                                        LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
+                                        Tracks CacheTrack = new Tracks()
+                                        {
+                                            Name = TrackData.track.name,
+                                            Artist = TrackData.track.artist.name,
+                                            Runtime = foundRuntime,
+                                            Date_Added = DateTime.Now,
+                                            Last_Used = DateTime.Now,
+                                            Source = "Last.FM"
+                                        };
+                                        _lmdata.Tracks.Add(CacheTrack);
+                                        await _lmdata.SaveChangesAsync();
+                                        Console.WriteLine($"[Last.FM] Found track '{scrobble.TrackName}' by '{scrobble.ArtistName}' with a runtime of {scrobble.Runtime}");
+                                    }
+
+                                }
+                            }
+                            
+                        }
+
+                        return scrobble;
+                    }
+                    else
+                    {
+                        scrobble.Runtime = 0;
+                        return scrobble;
+                    }
+                }
+            }
+            finally
+            {
+               semaphoreSlim.Release();
             }
         }
 

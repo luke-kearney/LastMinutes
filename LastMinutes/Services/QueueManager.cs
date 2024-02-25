@@ -77,7 +77,8 @@ namespace LastMinutes.Services
                 LastMinutes.Models.LMData.Queue queue = new Models.LMData.Queue()
                 {
                     Username = username,
-                    Mode = mode
+                    Mode = mode,
+                    Status = "Currently waiting in queue..."
                 };
 
                 _lmdata.Queue.Add(queue);
@@ -148,6 +149,22 @@ namespace LastMinutes.Services
             } else
             {
                 return false;
+            }
+
+        }
+
+        public async Task<string> GetQueueItemStatus(string username)
+        {
+            if (string.IsNullOrEmpty(username)) { return "Error"; }
+
+            Models.LMData.Queue queue = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username);
+
+            if (queue == null)
+            {
+                return "Done";
+            } else
+            {
+                return queue.Status;
             }
 
         }

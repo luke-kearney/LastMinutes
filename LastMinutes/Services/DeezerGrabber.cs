@@ -102,7 +102,8 @@ namespace LastMinutes.Services
                                 Artist = artistName,
                                 Runtime = durationMsResult,
                                 Date_Added = DateTime.Now,
-                                Last_Used = DateTime.Now
+                                Last_Used = DateTime.Now,
+                                Source = "Deezer"
                             };
 
                             _lmdata.Tracks.Add(CacheTrack);

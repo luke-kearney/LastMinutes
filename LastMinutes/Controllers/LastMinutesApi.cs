@@ -3,6 +3,7 @@ using LastMinutes.Models.LMData;
 using LastMinutes.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LastMinutes.Controllers
 {
@@ -70,6 +71,20 @@ namespace LastMinutes.Controllers
             }
         }
 
+        [HttpGet]
+        [Route("queue/getStatus")]
+        public async Task<ActionResult<string>> GetQueueStatus([FromQuery(Name = "username")] string username)
+        {
+            Queue queue = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username);
+            if (queue == null)
+            {
+                return "Done";
+            } else
+            {
+                return queue.Status;
+            }
+
+        }
 
         [HttpGet]
         [Route("queue/getLength")]

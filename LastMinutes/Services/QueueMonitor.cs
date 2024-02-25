@@ -2,6 +2,8 @@
 using LastMinutes.Models;
 using LastMinutes.Models.LastFM;
 using LastMinutes.Models.LMData;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -126,6 +128,8 @@ namespace LastMinutes.Services
                         }
                         #endregion
 
+                        await UpdateStatus(item, "Beginning processing...");
+
                         // Populate 
                         List<Dictionary<string, string>> AllScrobbles = new List<Dictionary<string, string>>();
 
@@ -159,6 +163,7 @@ namespace LastMinutes.Services
                                         }
                                     }
                                     Console.WriteLine($"[Queue] Loaded Last.FM up to pages {page.ToString()}/{TotalLastFmPages.ToString()}");
+                                    await UpdateStatus(item, $"Found Last.FM page {page}/{TotalLastFmPages}");
 
                                     tasks.Clear();
 
@@ -185,9 +190,17 @@ namespace LastMinutes.Services
                             Console.WriteLine($"[Queue] {item.Username} - Loaded Tracks: {ScrobblesAccumulatedPlays.Count()}");
                             Console.WriteLine($"[Queue] {item.Username} - Loaded Tracks: {ScrobblesAccumulatedPlays.Count()}");
 
+
+
+
+
+
                             #endregion
 
                             #region Cache Loading
+
+
+                            await UpdateStatus(item, $"Finding cached tracks...");
 
                             List<Tracks> AllCached = await _lmdata.Tracks.ToListAsync();
                             List<Scrobble> ProcessedScrobbles = new List<Scrobble>();
@@ -231,8 +244,40 @@ namespace LastMinutes.Services
 
                             #region Metadata Grabbing
 
+                            #region Last.FM
+                            await UpdateStatus(item, $"Searching minutes on Last.FM for {UncachedScrobbles.Count} tracks.");
+
+                            // Try get scrobble runtime from Last.FM
+
+                            var ScrobbleTasks = new List<Task<Scrobble>>();
+                            foreach (Scrobble sgd in UncachedScrobbles)
+                            {
+                                var task = _lastfm.GetScrobbleLength(sgd);
+                                ScrobbleTasks.Add(task);
+                            }
+
+                            await Task.WhenAll(ScrobbleTasks);
+
+                            foreach (var task in ScrobbleTasks)
+                            {
+                                Scrobble result = await task;
+                                if (result.Runtime != 0)
+                                {
+                                    ProcessedScrobbles.Add(result);
+                                    UncachedScrobbles.Remove(result);
+                                }
+                            }
+
+                            Console.WriteLine($"[Queue] Last.FM search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
+
+                            await Task.Delay(TimeSpan.FromSeconds(3));
+
+                            #endregion
+
+
                             // Search Deezer for all things scrobbles
                             #region Deezer
+                            await UpdateStatus(item, $"Searching minutes on Deezer for {UncachedScrobbles.Count} tracks.");
                             var DeezerTasks = new List<Task<Scrobble>>();
                             foreach (Scrobble sgd in UncachedScrobbles)
                             {
@@ -271,6 +316,7 @@ namespace LastMinutes.Services
 
                             // Search Spotify for all things scrobbles
                             #region Spotify
+                            await UpdateStatus(item, $"Searching minutes on Spotify for {UncachedScrobbles.Count} tracks.");
                             var SpotifyTasks = new List<Task<Scrobble>>();
                             foreach (Scrobble sgd in UncachedScrobbles)
                             {
@@ -326,6 +372,7 @@ namespace LastMinutes.Services
 
 
                             Console.WriteLine($"[Queue] Total Calculated Tracks: {ProcessedScrobbles.Count}");
+                            await UpdateStatus(item, $"Searching complete. Could not find minutes for {UncachedScrobbles.Count} tracks.");
 
                             long TotalRuntime = 0;
 
@@ -395,7 +442,24 @@ namespace LastMinutes.Services
 
 
 
+        private async Task<bool> UpdateStatus(Models.LMData.Queue item, string Status)
+        {
+            if (item == null) { return false; }
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
 
+                item.Status = Status;
+                _lmdata.Queue.Update(item);
+                if (await _lmdata.SaveChangesAsync() > 0)
+                {
+                    return true;
+                } else
+                {
+                    return false;
+                }
+            }
+        }
 
 
         private async Task<bool> ClearFromQueue(Models.LMData.Queue item)
