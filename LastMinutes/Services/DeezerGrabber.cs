@@ -27,7 +27,7 @@ namespace LastMinutes.Services
 
         private string DeezerApiUrl = string.Empty;
 
-        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(4);
+        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(3);
 
         public DeezerGrabber(
             IServiceProvider serviceProvider,

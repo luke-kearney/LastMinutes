@@ -149,11 +149,12 @@ namespace LastMinutes.Services
             try
             {
                 var (t, a, ms) = await SearchForTrack(ScrobbleIn.TrackName, ScrobbleIn.ArtistName, authToken);
-
+                int RetriesCount = 0;
                 // If the rate limit is hit, run the track request that hit it one more time so that no track is excluded.
-                while (t == "SpotifyRateLimitHit" || a == "ErrorException")
+                while (t == "SpotifyRateLimitHit" || a == "ErrorException" && RetriesCount > 5)
                 {
                     (t, a, ms) = await SearchForTrack(ScrobbleIn.TrackName, ScrobbleIn.ArtistName, authToken);
+                    RetriesCount++;
                 }
 
 

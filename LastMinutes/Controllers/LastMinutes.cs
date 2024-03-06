@@ -269,7 +269,7 @@ namespace LastMinutes.Controllers
         }
 
         [HttpPost]
-        [Route("/LastMinutes/CheckMinutes")]
+        [Route("/go/checkminutes")]
         public async Task<IActionResult> CheckMinutes(IFormCollection col)
         {
             string Username = col["username"].ToString();

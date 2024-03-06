@@ -21,8 +21,11 @@ namespace LastMinutes.Services
 
         public Task<Scrobble> GetScrobbleLength(Scrobble scrobble);
 
-        public Dictionary<(string, string), int> AccumulateTrackPlays(List<Dictionary<string, string>> AllScrobbles); 
+        public Dictionary<(string, string), int> AccumulateTrackPlays(List<Dictionary<string, string>> AllScrobbles);
 
+        public Task<List<Scrobble>> GetScrobbles(string username, int page);
+
+        public Task<int> GetTopPagesTotal(string username);
     }
 
 
@@ -34,7 +37,9 @@ namespace LastMinutes.Services
         private string LastFMApiUrl = string.Empty;
         private string LastFMApiKey = string.Empty;
 
-        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(2);
+        private bool EnableCaching = false;
+
+        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(8);
 
         public LastFMGrabber(
             IServiceProvider serviceProvider,
@@ -45,7 +50,7 @@ namespace LastMinutes.Services
 
             LastFMApiUrl = config.GetValue<string>("LastFMApiUrl");
             LastFMApiKey = config.GetValue<string>("LastFMApiKey");
-
+           // EnableCaching = config.GetValue<bool>("EnableCaching");
         }
 
         public async Task<LastFMUserData> GetUserData(string username)
@@ -203,6 +208,126 @@ namespace LastMinutes.Services
                semaphoreSlim.Release();
             }
         }
+
+        #region Get Scrobbles WITH runtime
+
+        public async Task<List<Scrobble>> GetScrobbles(string username, int page)
+        {
+            await semaphoreSlim.WaitAsync();
+            try
+            {
+                string url = $"{LastFMApiUrl}?method=user.gettoptracks&api_key={LastFMApiKey}&format=json&user={username}&limit=1000&page={page}&period=overall";
+
+
+                using (HttpClient client = new HttpClient())
+                {
+                    HttpResponseMessage response = await client.GetAsync(url);
+
+                    int Retries = 0;
+
+                    while (!response.IsSuccessStatusCode && Retries < 5)
+                    {
+                        response = await client.GetAsync(url);
+                        Retries++;
+                        Console.WriteLine($"[LastFM] Failed to retrieve page '{page}' for '{username}', retrying... ({Retries} / 5)");
+                    }
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        LastFmTopTracksResponse TopTrackData = JsonConvert.DeserializeObject<LastFmTopTracksResponse>(responseBody)!;
+                        List<LastFmTopTrack> TopTracks = TopTrackData.TopTracks.Tracks;
+
+                        List<Scrobble> scrobOut = new List<Scrobble>();
+
+                        foreach (LastFmTopTrack track in TopTracks)
+                        {
+                            if (!string.IsNullOrEmpty(track.Duration) && track.Duration != "0")
+                            {
+                                // work out track duration 
+                                int PlayCount;
+                                int DurationMs;
+                                Int32.TryParse(track.Duration, out DurationMs);
+                                Int32.TryParse(track.Playcount, out PlayCount);
+                                DurationMs = DurationMs * 1000;
+                                int TotalDurationMs = DurationMs * PlayCount;
+
+                                Scrobble NewTrack = new Scrobble()
+                                {
+                                    TrackName = track.Name,
+                                    ArtistName = track.Artist.Name,
+                                    Count = PlayCount,
+                                    Runtime = DurationMs,
+                                    TotalRuntime = TotalDurationMs
+                                };
+
+                                scrobOut.Add(NewTrack);
+                            } else
+                            {
+
+                                Int32.TryParse(track.Playcount, out int PlayCount);
+                                Scrobble NewTrack = new Scrobble()
+                                {
+                                    TrackName = track.Name,
+                                    ArtistName = track.Artist.Name,
+                                    Count = PlayCount,
+                                    Runtime = 0,
+                                    TotalRuntime = 0
+                                };
+
+                                scrobOut.Add(NewTrack);
+                            }
+                        }
+
+                        return scrobOut;
+                    }
+                    else
+                    {
+                        return new List<Scrobble>();
+                    }
+                }
+            }
+            finally
+            {
+                semaphoreSlim.Release();
+            }
+        }
+
+
+        public async Task<int> GetTopPagesTotal(string username)
+        {
+            string url = $"{LastFMApiUrl}?method=user.gettoptracks&api_key={LastFMApiKey}&format=json&user={username}&limit=1000&page=1&period=overall";
+
+
+            using (HttpClient client = new HttpClient())
+            {
+                HttpResponseMessage response = await client.GetAsync(url);
+
+                int Retries = 0;
+
+                while (!response.IsSuccessStatusCode && Retries < 5)
+                {
+                    response = await client.GetAsync(url);
+                    Retries++;
+                    Console.WriteLine($"[LastFM] Failed to retrieve total Top Tracks pages, retrying... ({Retries} / 5)");
+                }
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    LastFmTopTracksResponse TopTrackData = JsonConvert.DeserializeObject<LastFmTopTracksResponse>(responseBody)!;
+                    int TotalPages = 0;
+                    Int32.TryParse(TopTrackData.TopTracks.Attributes.TotalPages, out TotalPages);
+                    return TotalPages;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+
+        #endregion
 
         public async Task<int> GetTotalPages(string username, string to, string from)
         {
