@@ -6,16 +6,7 @@
     ViewData["Title"] = "Processing";
     ViewData["MetaTagRobots"] = "noindex";
 
-    string[] cuteMessages = new string[]
-    {
-                "Hiiii Kiara :)",
-                "Wow! This is still the best Last.FM account yet :)",
-                "Wow, you're still looking gorgeous ;)",
-                "I hope you're having a good day",
-    };
 
-    Random random = new Random();
-    int index = random.Next(0, cuteMessages.Length);
 
 }
 
@@ -36,16 +27,6 @@
             
 
             <br /><br />
-
-            @if (Model.Username.ToUpper() == "KIARA_DONUT")
-            {
-                <h6>@cuteMessages[index]</h6>
-
-                <br />
-
-                <br />
-            }
-
 
             Server is <b>@Model.ServerStatus</b><br />
             Please check back in a little bit.<br /><br />

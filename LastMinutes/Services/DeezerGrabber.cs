@@ -130,8 +130,8 @@ namespace LastMinutes.Services
                 else
                 {
 
-                    Console.WriteLine($"[Deezer] Error occurred while asking Deezer about '{trackName}' by {artistName}..");
-                    Console.WriteLine($"[Deezer] Error is {response.StatusCode}");
+                    //Console.WriteLine($"[Deezer] Error occurred while asking Deezer about '{trackName}' by {artistName}..");
+                    //Console.WriteLine($"[Deezer] Error is {response.StatusCode}");
                     return ("UnknownResponseError", "ErrorException", 0);
                 }
 
@@ -149,10 +149,12 @@ namespace LastMinutes.Services
             try
             {
                 var (t, a, ms) = await SearchForTrack(ScrobbleIn.TrackName, ScrobbleIn.ArtistName);
-
+                int retries = 0;
                 // If the rate limit is hit, run the track request that hit it one more time so that no track is excluded.
-                while (t == "UnknownResponseError" && a == "ErrorException")
+                while (t == "UnknownResponseError" && a == "ErrorException" && retries <= 5)
                 {
+                    Console.WriteLine($"[Deezer] 'UnknownResponseError' for track {ScrobbleIn.TrackName} by {ScrobbleIn.ArtistName}. Retrying... {retries}/5");
+                    retries++;
                     await Task.Delay(TimeSpan.FromSeconds(5));
                     (t, a, ms) = await SearchForTrack(ScrobbleIn.TrackName, ScrobbleIn.ArtistName);
                 }

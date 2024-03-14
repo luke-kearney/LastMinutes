@@ -29,33 +29,27 @@
         </div>
 
         <div class="row my-4">
-            <h5>How long will it take?</h5>
+            <h5>How does it work?</h5>
             <span>
-                That entirely depends on how many scrobbles you have :)<br />
-                This app currently caches every single track which it can find a runtime for, which means that the more this app is used, the less time it will take. <br /> <br> 
+                Most tracks on Last.FM have a length/duration property. This app simply fetches that data and calculates how many minutes you've listened to in a specified timeframe.
+                However, some tracks do not have runtime data on Last.FM, those tracks will then be searched for on Spotify and Deezer- that is why processing is done server side.
+                In order to speed up the process, tracks searched for on Spotify and Deezer will be cached with their runtimes.<br /> <br> 
                 Current Track Cache: <b>@Model.TotalCachedTracks</b> tracks.
-            </span>
-        </div>
-
-        <div class="row my-5">
-            <h5>Where do you get the track data from?</h5>
-            <span>
-                Currently, I use Deezer as the main source followed by Spotify. Whichever tracks Deezer can not find, will then be searched for on Spotify.
             </span>
         </div>
 
         <div class="row my-5">
             <h5>How accurate is the final result?</h5>
             <span>
-                I haven't yet done any testing, but I would estimate it to be around 95% accurate at-least.
+                I haven't yet done any testing, but I would estimate it to be around 95% accurate at-least. All track data provided by Last.FM is 100% accurate.
             </span>
         </div>
 
         <div class="row my-5">
             <h5>What are my <i>bad scrobbles</i>?</h5>
             <span>
-                Any scrobbles which the website cannot find a runtime for and that have a play count of more than 3 will be flagged as a <i>bad scrobble</i>.<br /><br />
-                Sometimes scrobbles may not match results found in our data sources. Also, API requests will fail if some tracks have stupidly long names (I'm looking at you Surfjan Stevens!). Eventually, if much demand is met, it will be possible to manually add bad scrobbles to the track cache.
+                Any tracks that the website cannot find a runtime for and that have a play count of more than 3 will be flagged as a <i>bad scrobble</i>.<br /><br />
+                Sometimes scrobbles may not match results found in our data sources. Also, API requests to Spotify and Deezer will fail if some tracks have stupidly long names (I'm looking at you Surfjan Stevens!). Eventually, if much demand is met, it will be possible to manually add bad scrobbles to the track cache.
 
             </span>
         </div>
@@ -63,8 +57,8 @@
         <div class="row my-5">
             <h5>Why can it take so long?</h5>
             <span>
-                Unlike many other Last.FM tools, this website has to make requests to Spotify using a private API key- meaning all computing has to be done on the web server instead of your local device.
-                Also, this tool only processes one username at a time. This is because of API rate limiting from Spotify and MusicBrainz. To be safe and prevent complete API cooldowns, this application only makes around one request per second.<br /><br />
+                Unlike many other Last.FM tools, this app works by retrieving data from Spotify and Deezer for the most accurate results- meaning all computing has to be done on the web server instead of your local device.
+                Also, this tool only processes one username at a time - this is because of API rate limiting from Spotify and Deezer. To be safe and prevent complete API cooldowns, this application only requests two tracks per second.<br /><br />
                 If this web app is met with much demand, then perhaps in the future I can implement synchronous queue processing. This is just a personal/hobby project of mine and I cannot afford to spend full time on it.
             </span>
         </div>
@@ -85,16 +79,17 @@
                 </ul>
 
                 Currently, only my friends have accounts with special privileges. I'm not sure if this is something I'll ever change in the future.<br />
-                In other words, I've spent a lot of time on this website and I'm not sure if I want to introduce a paywall for features.<br />
-                Additionally, as the track cache grows in size, I will be a lot more inclined to open more time frames for public access.
+                Since this app uses a queue system, to prevent unfair usage, and until the track cache grows in size, these extra time frames will not be accessible to the public. Maybe if I like your taste in music I can give you access ;)
             </span>
         </div>
 
         <div class="row my-5">
             <h5>How can I contact you?</h5>
             <span>
-                You can send me an email to this address:<br />
-                <a href="mailto:contact@mrdawg.co.za" class="link-light text-decoration-none goldhover fw-bold">contact@mrdawg.co.za</a>
+                You can contact me through Reddit or Last.FM:<br />
+                <a href="https://www.reddit.com/user/mrdawgza/" class="link-light goldhover fw-bold">Reddit</a><br />
+                <a href="https://www.last.fm/user/mrdawgza" class="link-light goldhover fw-bold">Last.FM</a>
+
             </span>
         </div>
 
