@@ -16,6 +16,7 @@ using LastMinutes.Models.LMData;
 using LastMinutes.Models;
 using LastMinutes.ActionFilters;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Diagnostics;
 
 namespace LastMinutes.Controllers
 {
@@ -70,6 +71,22 @@ namespace LastMinutes.Controllers
             };
             
             return View("FaqPage", vm);
+        }
+
+        [Route("/debug/app-status")]
+        public async Task<IActionResult> AppStatus()
+        {
+            AppStatusViewModel asvm = new AppStatusViewModel()
+            {
+                QueueLength = _queue.GetLength(),
+                ResultsAmount = _lmdata.Results.Count(),
+                TrackCache = await _lmdata.Tracks.CountAsync(),
+                SpotifyResponseTime = await GetResponseTimeAsync("api.spotify.com"),
+                DeezerResponseTime = await GetResponseTimeAsync("api.deezer.com"),
+                LastFmResponseTime = await GetResponseTimeAsync("ws.audioscrobbler.com"),
+            };
+
+            return View("AppStatus", asvm);
         }
 
         [Route("release-notes")]
@@ -427,6 +444,28 @@ namespace LastMinutes.Controllers
 
         #endregion
 
+
+        #region Methods 
+
+        private async Task<long> GetResponseTimeAsync(string url)
+        {
+            try
+            {
+                var ping = new System.Net.NetworkInformation.Ping();
+                var result = ping.Send(url);
+                if (result.Status != System.Net.NetworkInformation.IPStatus.Success)
+                {
+                    return -1;
+                }
+                return result.RoundtripTime;
+            } catch
+            {
+                return -1;
+            }
+
+        }
+
+        #endregion
 
     }
 }

@@ -1,0 +1,47 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@model LastMinutes.Models.ViewModels.AppStatusViewModel
+@{
+    ViewData["Title"] = "App Status"; 
+}
+
+<div class="col-12 col-md-6 text-center d-flex justify-content-center flex-wrap">
+    <div class="col-12">
+        <h1><a asp-action="Index" asp-controller="LastMinutes" class="text-decoration-none link-light" onmouseover="this.style.color='gold'" onmouseout="this.style.color='white'">LastMinutes</a></h1>
+    </div>
+
+    <div class="col-12 col-lg-5 text-start">
+        <h3>App Status</h3>
+
+
+            <p>
+
+                <b>Queue Count: </b> @Model.QueueLength<br />
+                <b>Results Count: </b> @Model.ResultsAmount<br />
+                <br />
+                <b>Track Cache: </b> @Model.TrackCache<br />
+                <br />
+                <b>API Status: </b><br />
+                <br />
+
+                <ul>
+                    <li><b>Spotify: </b> <span @if(Model.SpotifyResponseTime > 50 || Model.SpotifyResponseTime == -1) {@Html.Raw("class=\"text-danger\"")}>@Model.SpotifyResponseTime MS</span></li>
+                    <li><b>Deezer: </b> <span @if(Model.DeezerResponseTime > 200 || Model.DeezerResponseTime == -1) {@Html.Raw("class=\"text-danger\"")}>@Model.DeezerResponseTime MS</span></li>
+                    <li><b>LastFM: </b> <span @if(Model.LastFmResponseTime > 50 || Model.LastFmResponseTime == -1) {@Html.Raw("class=\"text-danger\"")}>@Model.LastFmResponseTime MS</span></li>
+                </ul>
+
+            </p>
+
+    </div>
+</div>
+
+@section Scripts{
+    <script>
+        function reloadPage(){
+            location.reload();
+        }
+        // Call the reloadPage function every 15 seconds
+        setInterval(reloadPage, 15000); // 15000 milliseconds = 15 seconds
+    </script>
+}
