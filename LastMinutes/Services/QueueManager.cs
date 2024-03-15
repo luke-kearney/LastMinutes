@@ -41,7 +41,7 @@ namespace LastMinutes.Services
         private readonly LMData _lmdata;
         private readonly IConfiguration _config;
         private readonly string[] LastFmFriends;
-        private int CooldownHours = 6;
+        private int CooldownHours = 1;
 
         public QueueManager(
             LMData lmdata,

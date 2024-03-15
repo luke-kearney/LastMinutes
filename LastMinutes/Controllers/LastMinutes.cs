@@ -81,9 +81,9 @@ namespace LastMinutes.Controllers
                 QueueLength = _queue.GetLength(),
                 ResultsAmount = _lmdata.Results.Count(),
                 TrackCache = await _lmdata.Tracks.CountAsync(),
-                SpotifyResponseTime = await GetResponseTimeAsync("api.spotify.com"),
-                DeezerResponseTime = await GetResponseTimeAsync("api.deezer.com"),
-                LastFmResponseTime = await GetResponseTimeAsync("ws.audioscrobbler.com"),
+                SpotifyResponseTime = 0,
+                DeezerResponseTime = 0,
+                LastFmResponseTime = 0,
             };
 
             return View("AppStatus", asvm);
