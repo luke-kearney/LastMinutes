@@ -1,0 +1,63 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@model LastMinutes.Models.ViewModels.FaqViewModel
+@{
+    ViewData["Title"] = "Release Notes"; 
+    ViewData["MetaTagDescription"] = "LastMinutes release notes and update change log.";
+    ViewData["MetaTagUrl"] = "release-notes";
+}
+
+<div class="col-12 col-md-6 text-center">
+    <h1><a asp-action="Index" asp-controller="LastMinutes" class="text-decoration-none link-light" onmouseover="this.style.color='gold'" onmouseout="this.style.color='white'">LastMinutes</a></h1>
+</div>
+
+<div class="col-12 d-flex justify-content-center">
+    <div class="col col-lg-8 text-center">
+        <h3>Release Notes</h3>
+    </div>
+</div>
+
+<div class="col col-md-11 col-lg-10 d-flex px-0 mx-2 justify-content-center mx-auto my-auto">
+    <div class="p-2 px-1 text-white">
+
+        <div class="row my-4">
+            <h5>Beta10315</h5>
+            <span>
+                <ul>
+                    <li>Added extra error handling to prevent the application from crashing.</li>
+                    <li>Opened extra time frames for public use, such as:
+                        <ul>
+                            <li>This Week</li>
+                            <li>This Month</li>
+                            <li>Over The Last Week</li>
+                            <li>Over The Last Month</li>
+                        </ul>
+                    </li>
+                    <li>Bad Scrobbles now show the top 100 tracks with no runtime data, regardless of play count.</li>
+                    <li>Added release notes page.</li>
+                    <li>There is now a 'News' feature on the landing & pending pages to provide information on the status of the app.</li>
+                    <li>The cooldown timer has been reduced to six hours.</li>
+                    <li>I have changed the queue processing so that Spotify searches for runtimes before Deezer. This will result in a less accurate result as the Deezer grabber is far more accurate than the Spotify one. This is a temporary measure while my connection to the Deezer API is volatile.  I will remove all cached tracks from Spotify from this point onward when the issue is resolved.</li>
+                </ul>
+            </span>
+        </div>
+
+       
+
+        <div class="row my-5">
+            <h5>How can I contact you?</h5>
+            <span>
+                You can contact me through Reddit or Last.FM:<br />
+                <a href="https://www.reddit.com/user/mrdawgza/" class="link-light goldhover fw-bold">Reddit</a><br />
+                <a href="https://www.last.fm/user/mrdawgza" class="link-light goldhover fw-bold">Last.FM</a>
+
+            </span>
+        </div>
+
+
+
+
+
+    </div>
+</div>

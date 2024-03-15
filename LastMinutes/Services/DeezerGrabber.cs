@@ -59,81 +59,91 @@ namespace LastMinutes.Services
                     Console.WriteLine($"[DEBUG] The track name is {Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(trackName))}");
                     Console.WriteLine($"[DEBUG] Searching RAMMSTIEN: URL: {searchUrl}");
                 }*/
-
-                HttpResponseMessage response = await httpClient.GetAsync(searchUrl);
-
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    var responseObject = JsonConvert.DeserializeObject<DeezerSearchResponse>(responseBody);
+                    HttpResponseMessage response = await httpClient.GetAsync(searchUrl);
 
-                    if (responseObject == null)
+                    if (response.IsSuccessStatusCode)
                     {
-                        return (trackName, artistName, 0);
-                    }
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        var responseObject = JsonConvert.DeserializeObject<DeezerSearchResponse>(responseBody);
 
-                    if (responseObject.Tracks == null)
-                    {
-                        return (trackName, artistName, 0);
-                    }
-
-                    if (responseObject.Tracks.Count != 0)
-                    {
-                        try
-                        {
-                            int StartIndex = 0;
-                            var track = responseObject.Tracks[StartIndex];
-                            int NameSimilarity = CompareStrings(track.Artist.Name.ToUpper(), artistName.ToUpper());
-
-                            while (NameSimilarity < 37)
-                            {
-                                StartIndex++;
-                                track = responseObject.Tracks[StartIndex];
-                                NameSimilarity = CompareStrings(track.Artist.Name.ToUpper(), artistName.ToUpper());
-                            }
-
-                            string trackNameResult = track.Title;
-                            string artistNameResult = track.Artist.Name;
-                            int durationMsResult = track.Duration * 1000;
-
-                            Tracks CacheTrack = new Tracks()
-                            {
-                                Name = trackName,
-                                Artist = artistName,
-                                Runtime = durationMsResult,
-                                Date_Added = DateTime.Now,
-                                Last_Used = DateTime.Now,
-                                Source = "Deezer"
-                            };
-
-                            _lmdata.Tracks.Add(CacheTrack);
-                            if (await _lmdata.SaveChangesAsync() > 0)
-                            {
-                                Console.WriteLine("");
-                                Console.WriteLine($"[Deezer] Search Term: '{trackName}' by '{artistName}'");
-                                Console.WriteLine($"[Cache]  Track Added: '{track.Title}' by '{track.Artist.Name}', runtime '{durationMsResult}'");
-                            }
-
-                            return (trackNameResult, artistNameResult, durationMsResult);
-                        }
-                        catch
+                        if (responseObject == null)
                         {
                             return (trackName, artistName, 0);
                         }
 
+                        if (responseObject.Tracks == null)
+                        {
+                            return (trackName, artistName, 0);
+                        }
+
+                        if (responseObject.Tracks.Count != 0)
+                        {
+                            try
+                            {
+                                int StartIndex = 0;
+                                var track = responseObject.Tracks[StartIndex];
+                                int NameSimilarity = CompareStrings(track.Artist.Name.ToUpper(), artistName.ToUpper());
+
+                                while (NameSimilarity < 37)
+                                {
+                                    StartIndex++;
+                                    track = responseObject.Tracks[StartIndex];
+                                    NameSimilarity = CompareStrings(track.Artist.Name.ToUpper(), artistName.ToUpper());
+                                }
+
+                                string trackNameResult = track.Title;
+                                string artistNameResult = track.Artist.Name;
+                                int durationMsResult = track.Duration * 1000;
+
+                                Tracks CacheTrack = new Tracks()
+                                {
+                                    Name = trackName,
+                                    Artist = artistName,
+                                    Runtime = durationMsResult,
+                                    Date_Added = DateTime.Now,
+                                    Last_Used = DateTime.Now,
+                                    Source = "Deezer"
+                                };
+
+                                _lmdata.Tracks.Add(CacheTrack);
+                                if (await _lmdata.SaveChangesAsync() > 0)
+                                {
+                                    Console.WriteLine("");
+                                    Console.WriteLine($"[Deezer] Search Term: '{trackName}' by '{artistName}'");
+                                    Console.WriteLine($"[Cache]  Track Added: '{track.Title}' by '{track.Artist.Name}', runtime '{durationMsResult}'");
+                                }
+
+                                return (trackNameResult, artistNameResult, durationMsResult);
+                            }
+                            catch
+                            {
+                                return (trackName, artistName, 0);
+                            }
+
+                        }
+                        else
+                        {
+                            return (trackName, artistName, 0);
+                        }
                     }
                     else
                     {
-                        return (trackName, artistName, 0);
-                    }
-                }
-                else
-                {
 
-                    //Console.WriteLine($"[Deezer] Error occurred while asking Deezer about '{trackName}' by {artistName}..");
-                    //Console.WriteLine($"[Deezer] Error is {response.StatusCode}");
+                        //Console.WriteLine($"[Deezer] Error occurred while asking Deezer about '{trackName}' by {artistName}..");
+                        //Console.WriteLine($"[Deezer] Error is {response.StatusCode}");
+                        return ("UnknownResponseError", "ErrorException", 0);
+                    }
+                } catch
+                {
+                    Console.WriteLine("");
+                    Console.WriteLine("Big exception handled on DeezerGrabber..");
+                    Console.WriteLine("Big exception handled on DeezerGrabber..");
+                    Console.WriteLine("");
                     return ("UnknownResponseError", "ErrorException", 0);
                 }
+                
 
 
 

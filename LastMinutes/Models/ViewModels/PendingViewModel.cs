@@ -8,5 +8,8 @@
         public string EtaWords { get; set; } = "Unknown";
         public string ServerStatus { get; set; } = "Unknown";
 
+        public bool ShowMessage { get; set; } = false;
+        public string Message { get; set; } = string.Empty;
+
     }
 }

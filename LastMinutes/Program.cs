@@ -13,6 +13,7 @@ ConfigurationManager configuration = builder.Configuration;
 configuration.AddJsonFile("AppData/dataSettings.json");
 configuration.AddJsonFile("AppData/apiConnections.json");
 configuration.AddJsonFile("AppData/specialAccounts.json", optional: true, reloadOnChange: true);
+configuration.AddJsonFile("AppData/messages.json", optional: true, reloadOnChange: true);
 
 bool ConfigPass = true;
 
@@ -52,7 +53,7 @@ if (!ConfigPass)
  *  -tag = Used if multiple releases are made per day (example: -a, -b, -test)
  */
 
-string AppVersion = "10314";
+string AppVersion = "10315";
 string AppStage = "Beta";
 
 configuration.AddInMemoryCollection(new Dictionary<string, string>

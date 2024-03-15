@@ -37,20 +37,19 @@ namespace LastMinutes.Services
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-
-               /* string Token = await _spotify.GetAccessToken();
-
-                Console.WriteLine($"[Debug] Token: {Token}");*/
-
-                await CheckDatabase();
-                // await TestingMB();
-               
-                /*string S1 = "Luke Kearney";
-                string S2 = "Luke Wayne";
-                int Similatrity = CompareStrings(S1.ToUpper(), S2.ToUpper());
-                Console.WriteLine($"String similarity is {Similatrity}");
-               */
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                    await CheckDatabase();
+                } catch (Exception e)
+                {
+                    Console.WriteLine("");
+                    Console.WriteLine("QueueMonitor.cs Experienced A Severe Fault and the BackgroundService has stopped!!");
+                    Console.WriteLine(e.Message.ToString());
+                    Console.WriteLine("Restarting BackgroundService in 30 seconds...");
+                    await Task.Delay(TimeSpan.FromSeconds(30));
+                }
+                
 
 
             }
@@ -316,30 +315,8 @@ namespace LastMinutes.Services
                             #endregion
 
 
-                            // Search Deezer for all things scrobbles
-                            #region Deezer
-                            await UpdateStatus(item, $"Searching minutes on Deezer for {UncachedScrobbles.Count} tracks.");
-                            var DeezerTasks = new List<Task<Scrobble>>();
-                            foreach (Scrobble sgd in UncachedScrobbles)
-                            {
-                                var task = _deezer.GetScrobbleData(sgd);
-                                DeezerTasks.Add(task);
-                            }
+                            
 
-                            await Task.WhenAll(DeezerTasks);
-                            int SetCountTracks = UncachedScrobbles.Count;
-                            foreach (var task in DeezerTasks)
-                            {
-                                Scrobble result = await task;
-                                if (result.Runtime != 0)
-                                {
-                                    ProcessedScrobbles.Add(result);
-                                    UncachedScrobbles.Remove(result);
-                                }
-                            }
-
-                            Console.WriteLine($"[Queue] Deezer search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
-                            #endregion
 
 
                             //Get Spotify auth token
@@ -382,7 +359,30 @@ namespace LastMinutes.Services
                             #endregion
 
 
-                            
+                            // Search Deezer for all things scrobbles
+                            #region Deezer
+                            await UpdateStatus(item, $"Searching minutes on Deezer for {UncachedScrobbles.Count} tracks.");
+                            var DeezerTasks = new List<Task<Scrobble>>();
+                            foreach (Scrobble sgd in UncachedScrobbles)
+                            {
+                                var task = _deezer.GetScrobbleData(sgd);
+                                DeezerTasks.Add(task);
+                            }
+
+                            await Task.WhenAll(DeezerTasks);
+                            int SetCountTracks = UncachedScrobbles.Count;
+                            foreach (var task in DeezerTasks)
+                            {
+                                Scrobble result = await task;
+                                if (result.Runtime != 0)
+                                {
+                                    ProcessedScrobbles.Add(result);
+                                    UncachedScrobbles.Remove(result);
+                                }
+                            }
+
+                            Console.WriteLine($"[Queue] Deezer search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
+                            #endregion
 
                             #endregion
 
@@ -406,9 +406,9 @@ namespace LastMinutes.Services
                                 .ToList();
 
                             List<Scrobble> BadScrobbles = UncachedScrobbles
-                                .Where(kvp => kvp.Count > 3)
+                                .Where(kvp => kvp.Count >= 1)
                                 .OrderByDescending(kvp => kvp.Count)
-                                .Take(25)
+                                .Take(100)
                                 .ToList();
 
                             /* foreach (var Song in TopTenMinutes)

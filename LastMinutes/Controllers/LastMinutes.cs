@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using LastMinutes.Models.LMData;
 using LastMinutes.Models;
 using LastMinutes.ActionFilters;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace LastMinutes.Controllers
 {
@@ -25,13 +26,15 @@ namespace LastMinutes.Controllers
         private readonly IQueueManager _queue;
         private readonly ISpotifyGrabber _spotify;
         private readonly LMData _lmdata;
+        private readonly IConfiguration _config;
 
 
-        public LastMinutes(IQueueManager queueManager, LMData lmdata, ISpotifyGrabber spotify)
+        public LastMinutes(IQueueManager queueManager, LMData lmdata, ISpotifyGrabber spotify, IConfiguration config)
         {
             _queue = queueManager;
             _lmdata = lmdata;
             _spotify = spotify;
+            _config = config;
         }
 
         #region Standard Logic
@@ -47,8 +50,13 @@ namespace LastMinutes.Controllers
                 ViewBag.SignedIn = true;
                 ViewBag.Username = LoginCookie;
             }
+            LandingPageViewModel lpvm = new LandingPageViewModel()
+            {
+                ShowMessage = _config.GetValue<bool>("LandingShowMessage"),
+                Message = _config.GetValue<string>("LandingMessage")
+            };
 
-            return View("LandingPage");
+            return View("LandingPage", lpvm);
         }
 
         [Route("faq")]
@@ -62,6 +70,12 @@ namespace LastMinutes.Controllers
             };
             
             return View("FaqPage", vm);
+        }
+
+        [Route("release-notes")]
+        public IActionResult ReleaseNotes()
+        {
+            return View("ReleaseNotes");
         }
 
         [Route("/results/{Username}")]
@@ -79,7 +93,9 @@ namespace LastMinutes.Controllers
                     Username = Username,
                     Eta = _queue.GetEta(),
                     EtaWords = _queue.ConvertMinutesToWordsLong(_queue.GetEta()),
-                    ServerStatus = _queue.Busy()
+                    ServerStatus = _queue.Busy(),
+                    ShowMessage = _config.GetValue<bool>("PendingShowMessage"),
+                    Message = _config.GetValue<string>("PendingMessage")
                 };
                 return View("PendingPage", spvm);
             }
@@ -142,11 +158,13 @@ namespace LastMinutes.Controllers
 
             if (IsFinished)
             {
-                Models.LMData.Results Result = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username == Username);
+                Models.LMData.Results? Result = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username == Username);
                 if (Result == null)
                 {
                     return Content("Something went very wrong...");
                 }
+
+                List<Scrobble> BadScrobbles = JsonConvert.DeserializeObject<List<Scrobble>>(Result.BadScrobbles) ?? new List<Scrobble>();
 
                 ResultsViewModel vm = new ResultsViewModel()
                 {
@@ -155,7 +173,7 @@ namespace LastMinutes.Controllers
                     TotalMs = Result.TotalPlaytime,
 
                     TopScrobbles = JsonConvert.DeserializeObject<List<Scrobble>>(Result.AllScrobbles) ?? new List<Scrobble>(),
-                    BadScrobbles = JsonConvert.DeserializeObject<List<Scrobble>>(Result.BadScrobbles) ?? new List<Scrobble>(),
+                    BadScrobbles = BadScrobbles.Take(100).ToList(),
 
                     TimeFrame = Result.TimeFrame,
                     FromWhen = Result.FromWhen,
@@ -302,7 +320,7 @@ namespace LastMinutes.Controllers
                 Username = Username,
                 Eta = _queue.GetEta(),
                 EtaWords = _queue.ConvertMinutesToWordsLong(_queue.GetEta()),
-                ServerStatus = _queue.Busy()
+                ServerStatus = _queue.Busy(),
             };
 
 

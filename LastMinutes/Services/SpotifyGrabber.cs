@@ -65,75 +65,86 @@ namespace LastMinutes.Services
 
                 httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
 
-                HttpResponseMessage response = await httpClient.GetAsync(searchUrl);
-
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    var responseObject = JsonConvert.DeserializeObject<SpotifySearchResponse>(responseBody);
+                    HttpResponseMessage response = await httpClient.GetAsync(searchUrl);
 
-                    if (responseObject == null)
+                    if (response.IsSuccessStatusCode)
                     {
-                        return (trackName, artistName, 0);
-                    }
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        var responseObject = JsonConvert.DeserializeObject<SpotifySearchResponse>(responseBody);
 
-                    if (responseObject.Tracks.Items.Count() != 0)
-                    {
-                        try
-                        {
-                            var track = responseObject.Tracks.Items[0];
-                            string trackNameResult = track.Name;
-                            string artistNameResult = track.Artists[0].Name;
-                            int durationMsResult = track.duration_ms;
-
-                            Tracks CacheTrack = new Tracks()
-                            {
-                                Name = trackName,
-                                Artist = artistName,
-                                Runtime = durationMsResult,
-                                Date_Added = DateTime.Now,
-                                Last_Used = DateTime.Now,
-                                Source = "Spotify"
-                            };
-
-                            _lmdata.Tracks.Add(CacheTrack);
-                            if (await _lmdata.SaveChangesAsync() > 0)
-                            {
-                                Console.WriteLine($"[Cache] New item added: '{trackNameResult}' by '{artistNameResult}', runtime '{durationMsResult}'");
-                                Console.WriteLine($"[Cache] Search Term Wa: '{trackName}' by '{artistName}', runtime '{durationMsResult}'");
-                                Console.WriteLine("");
-                            }
-
-                            return (trackNameResult, artistNameResult, durationMsResult);
-                        }
-                        catch
+                        if (responseObject == null)
                         {
                             return (trackName, artistName, 0);
                         }
 
+                        if (responseObject.Tracks.Items.Count() != 0)
+                        {
+                            try
+                            {
+                                var track = responseObject.Tracks.Items[0];
+                                string trackNameResult = track.Name;
+                                string artistNameResult = track.Artists[0].Name;
+                                int durationMsResult = track.duration_ms;
+
+                                Tracks CacheTrack = new Tracks()
+                                {
+                                    Name = trackName,
+                                    Artist = artistName,
+                                    Runtime = durationMsResult,
+                                    Date_Added = DateTime.Now,
+                                    Last_Used = DateTime.Now,
+                                    Source = "SpotifyDelete" // TODO: change this back to normal when Deezer is done fucking around
+                                };
+
+                                _lmdata.Tracks.Add(CacheTrack);
+                                if (await _lmdata.SaveChangesAsync() > 0)
+                                {
+                                    Console.WriteLine($"[Cache] New item added: '{trackNameResult}' by '{artistNameResult}', runtime '{durationMsResult}'");
+                                    Console.WriteLine($"[Cache] Search Term Wa: '{trackName}' by '{artistName}', runtime '{durationMsResult}'");
+                                    Console.WriteLine("");
+                                }
+
+                                return (trackNameResult, artistNameResult, durationMsResult);
+                            }
+                            catch
+                            {
+                                return (trackName, artistName, 0);
+                            }
+
+                        }
+                        else
+                        {
+                            return (trackName, artistName, 0);
+                        }
                     }
                     else
                     {
-                        return (trackName, artistName, 0);
+
+                        Console.WriteLine($"[Spotify] Error occurred while asking Spotify about '{trackName}' by {artistName}..");
+                        Console.WriteLine($"[Spotify] Error is {response.StatusCode}");
+
+                        // if the response is TooManyRequests, retrieve the cool-down time and wait for that amount before returning an empty/exception variable.
+                        if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                        {
+                            string retryAfterHeader = response.Headers.GetValues("Retry-After").FirstOrDefault() ?? "30";
+                            Console.WriteLine($"[Spotify] Pausing for {retryAfterHeader} seconds.");
+                            await Task.Delay(TimeSpan.FromSeconds(Int32.Parse(retryAfterHeader)));
+                            return ("SpotifyRateLimitHit", "ErrorException", 0);
+                        }
+
+                        return ("UnknownResponseError", "ErrorException", 0);
                     }
-                }
-                else
+                } catch
                 {
-
-                    Console.WriteLine($"[Spotify] Error occurred while asking Spotify about '{trackName}' by {artistName}..");
-                    Console.WriteLine($"[Spotify] Error is {response.StatusCode}");
-
-                    // if the response is TooManyRequests, retrieve the cool-down time and wait for that amount before returning an empty/exception variable.
-                    if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                    {
-                        string retryAfterHeader = response.Headers.GetValues("Retry-After").FirstOrDefault() ?? "30";
-                        Console.WriteLine($"[Spotify] Pausing for {retryAfterHeader} seconds.");
-                        await Task.Delay(TimeSpan.FromSeconds(Int32.Parse(retryAfterHeader)));
-                        return ("SpotifyRateLimitHit", "ErrorException", 0);
-                    }
-
+                    Console.WriteLine("");
+                    Console.WriteLine("Big exception handled on SpotifyGrabber..");
+                    Console.WriteLine("Big exception handled on SpotifyGrabber..");
+                    Console.WriteLine("");
                     return ("UnknownResponseError", "ErrorException", 0);
                 }
+                
 
 
 

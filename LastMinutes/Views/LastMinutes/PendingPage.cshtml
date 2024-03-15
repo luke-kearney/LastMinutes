@@ -25,14 +25,21 @@
             Your minutes are being tallied.<br />
             <i id="CurrentStatus"></i>
             
-
             <br /><br />
 
             Server is <b>@Model.ServerStatus</b><br />
             Please check back in a little bit.<br /><br />
             <span class="text-muted">This page will automatically refresh</span><br /><br />
             <a asp-action="Faq" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light" onmouseover="this.style.color='gold'" onmouseout="this.style.color='white'">Read more..</a>
+            
 
+            @if (Model.ShowMessage)
+            {
+                <br />
+                <br />
+                <h5>News</h5>
+                <p>@Html.Raw(Model.Message)</p>
+            }
         </p>
 
         

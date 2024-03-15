@@ -1,6 +1,7 @@
 ﻿@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
+@model LastMinutes.Models.ViewModels.LandingPageViewModel
 @{
     ViewData["Title"] = "Home";
     bool SignedIn = ViewBag.SignedIn ?? false;
@@ -53,14 +54,11 @@
                             </select>
                         } else
                         {
-                            <select class="form-select form-select-sm" name="Mode" aria-label="Over Time" disabled>
-                                <option value="1">Over All Time</option>
+                            <select class="form-select form-select-sm" name="Mode" aria-label="Over Time">
                                 <option value="2">Over The Last Week</option>
                                 <option value="3" selected>Over The Last Month</option>
-                                <option value="4">Over The Last Year</option>
                                 <option value="5">This Week</option>
                                 <option value="6">This Month</option>
-                                <option value="7">This Year</option>
                             </select>
                         }
                     </div>
@@ -93,6 +91,14 @@
 
         </p>
 
+
+        @if (Model.ShowMessage)
+        {
+            <br />
+            <br />
+            <h5>News</h5>
+            <p>@Html.Raw(Model.Message)</p>
+        }
         
 
     </div>

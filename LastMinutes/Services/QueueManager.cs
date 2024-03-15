@@ -41,7 +41,7 @@ namespace LastMinutes.Services
         private readonly LMData _lmdata;
         private readonly IConfiguration _config;
         private readonly string[] LastFmFriends;
-        private int CooldownHours = 24;
+        private int CooldownHours = 6;
 
         public QueueManager(
             LMData lmdata,
@@ -62,16 +62,22 @@ namespace LastMinutes.Services
                 return false;
             }
 
-            if (!LastFmFriends.Contains(username.ToUpper()))
-            {
-                mode = 3;
+            int[] PremiumModes = { 1, 4, 7 };
+
+            if (PremiumModes.Contains(mode))
+            { // user selected premium, check if they are special
+                if (!LastFmFriends.Contains(username.ToUpper()))
+                {
+                    mode = 3;
+                }
             } 
+
             if (mode == 0)
             {
                 mode = 3;
             }
 
-            LastMinutes.Models.LMData.Queue CheckExists = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username);
+            LastMinutes.Models.LMData.Queue? CheckExists = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username);
             if (CheckExists == null)
             {
                 LastMinutes.Models.LMData.Queue queue = new Models.LMData.Queue()
