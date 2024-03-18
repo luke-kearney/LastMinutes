@@ -41,6 +41,7 @@ namespace LastMinutes.Services
                 {
                     await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
                     await CheckDatabase();
+                    await ClearOldResults();
                 } catch (Exception e)
                 {
                     Console.WriteLine("");
@@ -315,8 +316,31 @@ namespace LastMinutes.Services
                             #endregion
 
 
-                            
 
+                            // Search Deezer for all things scrobbles
+                            #region Deezer
+                            await UpdateStatus(item, $"Searching minutes on Deezer for {UncachedScrobbles.Count} tracks.");
+                            var DeezerTasks = new List<Task<Scrobble>>();
+                            foreach (Scrobble sgd in UncachedScrobbles)
+                            {
+                                var task = _deezer.GetScrobbleData(sgd);
+                                DeezerTasks.Add(task);
+                            }
+
+                            await Task.WhenAll(DeezerTasks);
+                            int SetCountTracks = UncachedScrobbles.Count;
+                            foreach (var task in DeezerTasks)
+                            {
+                                Scrobble result = await task;
+                                if (result.Runtime != 0)
+                                {
+                                    ProcessedScrobbles.Add(result);
+                                    UncachedScrobbles.Remove(result);
+                                }
+                            }
+
+                            Console.WriteLine($"[Queue] Deezer search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
+                            #endregion
 
 
                             //Get Spotify auth token
@@ -359,30 +383,6 @@ namespace LastMinutes.Services
                             #endregion
 
 
-                            // Search Deezer for all things scrobbles
-                            #region Deezer
-                            await UpdateStatus(item, $"Searching minutes on Deezer for {UncachedScrobbles.Count} tracks.");
-                            var DeezerTasks = new List<Task<Scrobble>>();
-                            foreach (Scrobble sgd in UncachedScrobbles)
-                            {
-                                var task = _deezer.GetScrobbleData(sgd);
-                                DeezerTasks.Add(task);
-                            }
-
-                            await Task.WhenAll(DeezerTasks);
-                            int SetCountTracks = UncachedScrobbles.Count;
-                            foreach (var task in DeezerTasks)
-                            {
-                                Scrobble result = await task;
-                                if (result.Runtime != 0)
-                                {
-                                    ProcessedScrobbles.Add(result);
-                                    UncachedScrobbles.Remove(result);
-                                }
-                            }
-
-                            Console.WriteLine($"[Queue] Deezer search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
-                            #endregion
 
                             #endregion
 
@@ -436,7 +436,10 @@ namespace LastMinutes.Services
 
                             _lmdata.Results.Add(Result);
 
-                            await _lmdata.SaveChangesAsync();
+                            if (await _lmdata.SaveChangesAsync() > 0)
+                            {
+                                await UpdateStats(Result.TotalPlaytime);
+                            }
 
                             await ClearFromQueue(item);
 
@@ -456,6 +459,42 @@ namespace LastMinutes.Services
             }
         }
 
+
+        private async Task<bool> ClearOldResults(int Hours = 24)
+        {
+            try
+            {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
+
+                    var TimeAgo = DateTime.Now.AddHours(Hours * -1);
+                    List<LastMinutes.Models.LMData.Results> RemoveResults = _lmdata.Results.Where(x => x.Created_On < TimeAgo).ToList();
+
+                    if (RemoveResults != null)
+                    {
+                        _lmdata.Results.RemoveRange(RemoveResults);
+                        if (await _lmdata.SaveChangesAsync() > 0)
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            } catch
+            {
+                return false;
+            }
+            
+
+        }
 
 
         private async Task<bool> UpdateStatus(Models.LMData.Queue item, string Status)
@@ -517,7 +556,64 @@ namespace LastMinutes.Services
         }
 
 
-        
+
+        private async Task<bool> UpdateStats(long totalMinutes)
+        {
+            try
+            {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
+
+                    Stats? TotalMinutes = await _lmdata.Stats.FirstOrDefaultAsync(x => x.Name == "TotalMinutes");
+                    long totalMinutesLong = 0;
+
+                    if (TotalMinutes == null)
+                    {
+                        TotalMinutes = new Stats()
+                        {
+                            Name = "TotalMinutes",
+                            Data = (totalMinutes / 60000).ToString(),
+                        };
+                        _lmdata.Stats.Add(TotalMinutes);
+                    } else
+                    {
+                        totalMinutesLong = long.Parse(TotalMinutes.Data);
+                        totalMinutesLong = totalMinutesLong + (totalMinutes / 60000);
+                        TotalMinutes.Data = totalMinutesLong.ToString();
+                        _lmdata.Stats.Update(TotalMinutes);
+                    }
+
+
+                    Stats? TotalRuns = await _lmdata.Stats.FirstOrDefaultAsync(x => x.Name == "TotalRuns");
+                    long totalRunsLong = 0;
+                    if (TotalRuns == null)
+                    {
+                        TotalRuns = new Stats()
+                        {
+                            Name = "TotalRuns",
+                            Data = "1",
+                        };
+                        _lmdata.Stats.Add(TotalRuns);
+                    } else
+                    {
+                        totalRunsLong = long.Parse(TotalRuns.Data) + 1;
+                        TotalRuns.Data = totalRunsLong.ToString();
+                        _lmdata.Stats.Update(TotalRuns);
+                    }
+
+                    await _lmdata.SaveChangesAsync();
+                    return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+
+
+        }
+
 
 
     }

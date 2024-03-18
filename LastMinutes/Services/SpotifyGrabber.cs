@@ -95,7 +95,7 @@ namespace LastMinutes.Services
                                     Runtime = durationMsResult,
                                     Date_Added = DateTime.Now,
                                     Last_Used = DateTime.Now,
-                                    Source = "SpotifyDelete" // TODO: change this back to normal when Deezer is done fucking around
+                                    Source = "Spotify" 
                                 };
 
                                 _lmdata.Tracks.Add(CacheTrack);

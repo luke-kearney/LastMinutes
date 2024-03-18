@@ -22,14 +22,10 @@
                 <br />
                 <b>Track Cache: </b> @Model.TrackCache<br />
                 <br />
-                <b>API Status: </b><br />
+                <b>Total Runs: </b> @Model.Runs<br />
+                <b>Total Minutes: </b> @Model.TotalMinutes<br />
                 <br />
 
-                <ul>
-                    <li><b>Spotify: </b> <span @if(Model.SpotifyResponseTime > 50 || Model.SpotifyResponseTime == -1) {@Html.Raw("class=\"text-danger\"")}>@Model.SpotifyResponseTime MS</span></li>
-                    <li><b>Deezer: </b> <span @if(Model.DeezerResponseTime > 200 || Model.DeezerResponseTime == -1) {@Html.Raw("class=\"text-danger\"")}>@Model.DeezerResponseTime MS</span></li>
-                    <li><b>LastFM: </b> <span @if(Model.LastFmResponseTime > 50 || Model.LastFmResponseTime == -1) {@Html.Raw("class=\"text-danger\"")}>@Model.LastFmResponseTime MS</span></li>
-                </ul>
 
             </p>
 

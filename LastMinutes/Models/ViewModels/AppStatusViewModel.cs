@@ -8,6 +8,9 @@
 
         public int TrackCache { get; set; }
 
+        public int Runs { get; set; }
+        public long TotalMinutes { get; set; }
+
 
         public long DeezerResponseTime { get; set; }
         public long SpotifyResponseTime { get; set; }

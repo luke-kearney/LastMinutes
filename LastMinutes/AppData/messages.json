@@ -1,7 +1,7 @@
 {
   "PendingShowMessage": true,
-  "PendingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">New version released</a>.<br> Deezer search is currrently running very slow. <br>The reason is unknown, but likely due to a damaged undersea cable that serves South Africa.",
+  "PendingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">New version released</a>.<br>Queue processing is back to normal speed.",
 
   "LandingShowMessage": true,
-  "LandingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">New version released</a>.<br>The new version should hopefully fix an issue that occurred last night (UTC) where this application crashed and was not processing the queue. "
+  "LandingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">New version released</a>.<br>Queue processing is back to normal speed."
 }

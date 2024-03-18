@@ -16,6 +16,7 @@ namespace LastMinutes.Data
         public DbSet<LastMinutes.Models.LMData.Results> Results { get; set; } = default!;
 
         public DbSet<LastMinutes.Models.LMData.Tracks> Tracks { get; set; } = default!;
+        public DbSet<LastMinutes.Models.LMData.Stats> Stats { get; set; } = default!;
 
     }
 }

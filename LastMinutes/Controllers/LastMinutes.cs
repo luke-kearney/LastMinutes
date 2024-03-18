@@ -76,17 +76,28 @@ namespace LastMinutes.Controllers
         [Route("/debug/app-status")]
         public async Task<IActionResult> AppStatus()
         {
-            AppStatusViewModel asvm = new AppStatusViewModel()
+            try
             {
-                QueueLength = _queue.GetLength(),
-                ResultsAmount = _lmdata.Results.Count(),
-                TrackCache = await _lmdata.Tracks.CountAsync(),
-                SpotifyResponseTime = 0,
-                DeezerResponseTime = 0,
-                LastFmResponseTime = 0,
-            };
+                Stats? runs = await _lmdata.Stats.FirstOrDefaultAsync(x => x.Name == "TotalRuns");
+                Stats? minutes = await _lmdata.Stats.FirstOrDefaultAsync(x => x.Name == "TotalMinutes");
 
-            return View("AppStatus", asvm);
+                AppStatusViewModel asvm = new AppStatusViewModel()
+                {
+                    QueueLength = _queue.GetLength(),
+                    ResultsAmount = _lmdata.Results.Count(),
+                    TrackCache = await _lmdata.Tracks.CountAsync(),
+                    SpotifyResponseTime = 0,
+                    DeezerResponseTime = 0,
+                    LastFmResponseTime = 0,
+                    Runs = Int32.Parse(runs?.Data ?? "0"),
+                    TotalMinutes = Int32.Parse(minutes?.Data ?? "0"),
+                };
+                return View("AppStatus", asvm);
+            } catch
+            {
+                return Content("Something went wrong.");
+            }
+
         }
 
         [Route("release-notes")]
