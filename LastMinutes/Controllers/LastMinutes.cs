@@ -40,7 +40,7 @@ namespace LastMinutes.Controllers
 
         #region Standard Logic
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             ViewBag.SignedIn = false;
             ViewBag.Username = "";
@@ -54,8 +54,17 @@ namespace LastMinutes.Controllers
             LandingPageViewModel lpvm = new LandingPageViewModel()
             {
                 ShowMessage = _config.GetValue<bool>("LandingShowMessage"),
-                Message = _config.GetValue<string>("LandingMessage")
+                Message = _config.GetValue<string>("LandingMessage"),
+                TotalMinutes = 0
             };
+
+            try
+            {
+                Stats? minutes = await _lmdata.Stats.FirstOrDefaultAsync(x => x.Name == "TotalMinutes");
+                lpvm.TotalMinutes = Int32.Parse(minutes?.Data ?? "0");
+            } catch { 
+            }
+
 
             return View("LandingPage", lpvm);
         }

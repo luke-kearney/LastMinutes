@@ -1,7 +1,7 @@
 {
   "PendingShowMessage": true,
-  "PendingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">New version released</a>.<br>Queue processing is back to normal speed.",
+  "PendingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">New version released</a>.<br>'Special Accounts' have been removed.<br> You can now use all time frames!",
 
   "LandingShowMessage": true,
-  "LandingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">New version released</a>.<br>Queue processing is back to normal speed."
+  "LandingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">New version released</a>.<br>'Special Accounts' have been removed.<br> You can now use all time frames!"
 }

@@ -29,38 +29,23 @@
 
             <form asp-action="CheckMinutes" asp-controller="LastMinutes" method="POST">
 
-                @if (string.IsNullOrEmpty(Username) && SignedIn == false)
-                {
-                    <input class="form-control" type="text" name="username" placeholder="Last.FM Username" required />
-                } else
-                {
-                    <input class="form-control" type="text" name="username" placeholder="Last.FM Username" value="@Username" required />                
-                }
-
+                <input class="form-control" type="text" name="username" placeholder="Last.FM Username" required />
+                
                 <br />
                 <div class="col d-flex flex-wrap justify-content-between">
 
                     <div class="col col-md-6 my-2">
-                        @if (SignedIn)
-                        {
-                            <select class="form-select form-select-sm" name="Mode" aria-label="Over Time">
-                                <option value="1">Over All Time</option>
-                                <option value="2">Over The Last Week</option>
-                                <option value="3" selected>Over The Last Month</option>
-                                <option value="4">Over The Last Year</option>
-                                <option value="5">This Week</option>
-                                <option value="6">This Month</option>
-                                <option value="7">This Year</option>
-                            </select>
-                        } else
-                        {
-                            <select class="form-select form-select-sm" name="Mode" aria-label="Over Time">
-                                <option value="2">Over The Last Week</option>
-                                <option value="3" selected>Over The Last Month</option>
-                                <option value="5">This Week</option>
-                                <option value="6">This Month</option>
-                            </select>
-                        }
+                       
+                        <select class="form-select form-select-sm" name="Mode" aria-label="Over Time">
+                            <option value="1">Over All Time</option>
+                            <option value="2">Over The Last Week</option>
+                            <option value="3" selected>Over The Last Month</option>
+                            <option value="4">Over The Last Year</option>
+                            <option value="5">This Week</option>
+                            <option value="6">This Month</option>
+                            <option value="7">This Year</option>
+                        </select>
+                        
                     </div>
 
 
@@ -79,15 +64,10 @@
 
 
         <p>
-            @if (!SignedIn)
-            {
-                <a asp-action="SignInIndex" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Sign In <span class="text-muted">(for special privileges)</span></a>
-            } else
-            {
-                <a asp-action="SignOut" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Sign Out</a>
-            }
             <br>
             <a asp-action="Faq" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Frequently Asked Questions</a>
+            <br>
+            <b>@Model.TotalMinutes.ToString("N0")</b> minutes tallied in total!
 
         </p>
 

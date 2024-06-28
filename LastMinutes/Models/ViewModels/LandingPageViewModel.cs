@@ -6,5 +6,7 @@
         public bool ShowMessage { get; set; } = false;
         public string Message { get; set; } = string.Empty;
 
+        public long TotalMinutes { get; set; } 
+
     }
 }

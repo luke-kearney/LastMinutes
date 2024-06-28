@@ -62,6 +62,9 @@ namespace LastMinutes.Services
                 return false;
             }
 
+            /*
+             // This code has been removed because it was used as a rate limiting feature and is no longer needed. 
+             
             int[] PremiumModes = { 1, 4, 7 };
 
             if (PremiumModes.Contains(mode))
@@ -71,6 +74,8 @@ namespace LastMinutes.Services
                     mode = 3;
                 }
             } 
+
+            */
 
             if (mode == 0)
             {
