@@ -53,7 +53,7 @@ if (!ConfigPass)
  *  -tag = Used if multiple releases are made per day (example: -a, -b, -test)
  */
 
-string AppVersion = "10318";
+string AppVersion = "10628";
 string AppStage = "Beta";
 
 configuration.AddInMemoryCollection(new Dictionary<string, string>
