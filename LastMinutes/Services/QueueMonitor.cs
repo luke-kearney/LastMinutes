@@ -441,6 +441,8 @@ namespace LastMinutes.Services
                                 await UpdateStats(Result.TotalPlaytime);
                             }
 
+                            await SubmitToLeaderboard(item, ConvertMsToMinutesLong(TotalRuntime));
+
                             await ClearFromQueue(item);
 
                         }
@@ -517,6 +519,39 @@ namespace LastMinutes.Services
         }
 
 
+        private async Task<bool> SubmitToLeaderboard(Models.LMData.Queue item, long totalMinutes)
+        {
+            if (item.submitToLeaderboard == false) { return false; }
+
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
+                
+                var FoundExistingLeaderboard = await _lmdata.Leaderboard.FirstOrDefaultAsync(x => x.Username == item.Username);
+                if (FoundExistingLeaderboard != null)
+                    _lmdata.Remove(FoundExistingLeaderboard);
+
+                var newLeaderboardEntry = new Leaderboard()
+                {
+                    Username = item.Username,
+                    TotalMinutes = totalMinutes,
+                    Created_On = DateTime.Now
+                };
+
+                _lmdata.Leaderboard.Add(newLeaderboardEntry);
+                if (await _lmdata.SaveChangesAsync() > 0)
+                {
+                    return true;
+                } else
+                {
+                    return false;
+                }
+                
+
+            }
+        }
+
+
         private async Task<bool> ClearFromQueue(Models.LMData.Queue item)
         {
             if (item == null) { return false; }
@@ -555,6 +590,10 @@ namespace LastMinutes.Services
             }
         }
 
+        private long ConvertMsToMinutesLong(long msIn)
+        {
+            return msIn / 60000;
+        }
 
 
         private async Task<bool> UpdateStats(long totalMinutes)

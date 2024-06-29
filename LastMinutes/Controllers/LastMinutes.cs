@@ -17,6 +17,7 @@ using LastMinutes.Models;
 using LastMinutes.ActionFilters;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Diagnostics;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace LastMinutes.Controllers
 {
@@ -45,12 +46,13 @@ namespace LastMinutes.Controllers
             ViewBag.SignedIn = false;
             ViewBag.Username = "";
 
-            string LoginCookie = Request.Cookies["Username"];
+            string? LoginCookie = Request.Cookies["Username"];
             if (LoginCookie != null )
             {
                 ViewBag.SignedIn = true;
                 ViewBag.Username = LoginCookie;
             }
+
             LandingPageViewModel lpvm = new LandingPageViewModel()
             {
                 ShowMessage = _config.GetValue<bool>("LandingShowMessage"),
@@ -61,7 +63,7 @@ namespace LastMinutes.Controllers
             try
             {
                 Stats? minutes = await _lmdata.Stats.FirstOrDefaultAsync(x => x.Name == "TotalMinutes");
-                lpvm.TotalMinutes = Int32.Parse(minutes?.Data ?? "0");
+                lpvm.TotalMinutes = long.Parse(minutes?.Data ?? "0");
             } catch { 
             }
 
@@ -114,6 +116,59 @@ namespace LastMinutes.Controllers
         {
             return View("ReleaseNotes");
         }
+
+
+
+        [Route("/leaderboard")]
+        public async Task<IActionResult> Leaderboard()
+        {
+            List<Leaderboard> LeaderboardEntries = await _lmdata.Leaderboard.ToListAsync();
+            LeaderboardViewModel vm = new LeaderboardViewModel()
+            {
+                leaderboardEntries = LeaderboardEntries
+            };
+            try
+            {
+                Stats? minutes = await _lmdata.Stats.FirstOrDefaultAsync(x => x.Name == "TotalMinutes");
+                vm.TotalMinutes = long.Parse(minutes?.Data ?? "0");
+            }
+            catch
+            {
+                vm.TotalMinutes = 0;
+            }
+
+            string? LoginCookie = Request.Cookies["Username"];
+            if (LoginCookie != null)
+            {
+                ViewBag.SignedIn = true;
+                ViewBag.Username = LoginCookie;
+            }
+
+            return View("Leaderboard/Leaderboard", vm);
+        }
+
+
+        /*[Route("/simulate-leaderboard")]
+        public async Task<IActionResult> SimLeaderboard()
+        {
+            int counter = 0;
+            while (counter < 50)
+            {
+                var newLead = new Leaderboard()
+                {
+                    Username = "Testing User " + counter.ToString(),
+                    TotalMinutes = new Random().Next(100, 40000),
+                };
+                _lmdata.Leaderboard.Add(newLead);
+                await Task.Delay(20);
+                counter++;
+            }
+            await _lmdata.SaveChangesAsync();
+            return Content("yes");
+        }
+        */
+
+
 
         [Route("/results/{Username}")]
         public async Task<IActionResult> ResultsIndex(string Username)
@@ -325,15 +380,17 @@ namespace LastMinutes.Controllers
 
         [HttpPost]
         [Route("/go/checkminutes")]
-        public async Task<IActionResult> CheckMinutes(IFormCollection col)
+        public async Task<IActionResult> CheckMinutes(LandingPageViewModel vm)
         {
-            string Username = col["username"].ToString();
+            string Username = vm.username;
             if (string.IsNullOrEmpty(Username)) { return Content("No Username Supplied!"); }
 
+            bool SubmitToLeaderboard = vm.leaderboardSwitchInput;
+
             // Get the mode required
-            string ModeIn = col["Mode"].ToString() ?? "3";
+            string ModeIn = vm.Mode;
             int Mode = 0;
-            switch (ModeIn)
+            /*switch (ModeIn)
             {
                 case "1": Mode = 1; break; // Over All Time
                 case "2": Mode = 2; break; // Over The Last Week
@@ -342,7 +399,15 @@ namespace LastMinutes.Controllers
                 case "5": Mode = 5; break; // This Week
                 case "6": Mode = 6; break; // This Month
                 case "7": Mode = 7; break; // This Year
+            }*/
+
+            try
+            {
+                Mode = Int32.Parse(vm.Mode);
+            } catch {
+                Mode = 3;
             }
+
 
             bool IsInQueue = await _queue.InQueue(Username);
             bool IsFinished = await _queue.IsFinished(Username);
@@ -367,8 +432,12 @@ namespace LastMinutes.Controllers
             }
 
 
-            if (await _queue.AddUsernameToQueue(Username, Mode))
+            if (await _queue.AddUsernameToQueue(Username, Mode, SubmitToLeaderboard))
             {
+                CookieOptions option = new CookieOptions();
+                option.Expires = DateTime.Now.AddDays(31);
+
+                Response.Cookies.Append("Username", Username, option);
                 return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = Username });
             } 
             

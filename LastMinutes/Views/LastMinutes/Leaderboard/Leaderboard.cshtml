@@ -1,0 +1,56 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@model LastMinutes.Models.ViewModels.LeaderboardViewModel
+@using LastMinutes.Models.LMData
+@{
+    ViewData["Title"] = $"Leaderboard";
+    ViewData["TotalMinutes"] = Model.TotalMinutes.ToString("N0");
+    string Username = ViewBag.Username;
+}
+
+
+<div class="col d-flex justify-content-center">
+
+
+
+    <div class="col-12 col-md-10 p-2 text-white">
+        <h4 class="my-3">The Top Results</h4>
+        
+        <div class="col-12 my-3" style="max-height: 500px; overflow-y: scroll">
+
+
+            <p>
+                @{
+                    int counter = 1;
+                }
+                @foreach (Leaderboard leaderboard in Model.leaderboardEntries.Take(50).OrderByDescending(x => x.TotalMinutes))
+                {
+                    @if (leaderboard.Username == Username)
+                    {
+                        <span>
+                            <b>@counter.ToString()</b>: <b><i>@leaderboard.Username</i></b> (@leaderboard.TotalMinutes.ToString("N0") minutes)
+                        </span>
+                    } else
+                    {
+                        <span>
+                            <b>@counter.ToString()</b>: <i>@leaderboard.Username</i> (@leaderboard.TotalMinutes.ToString("N0") minutes)
+                        </span>
+                    }
+
+                    <br />
+
+
+                    counter++;
+
+                }
+            </p>
+
+        </div>
+
+        <h6><a asp-action="Index" asp-controller="LastMinutes" class="link-light text-decoration-none goldhover">Go Back</a></h6>
+    </div>
+
+
+
+</div>

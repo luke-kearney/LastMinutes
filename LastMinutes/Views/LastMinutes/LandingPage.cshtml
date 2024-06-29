@@ -4,12 +4,35 @@
 @model LastMinutes.Models.ViewModels.LandingPageViewModel
 @{
     ViewData["Title"] = "Home";
-    bool SignedIn = ViewBag.SignedIn ?? false;
-    string Username = ViewBag.Username;
+    //bool SignedIn = ViewBag.SignedIn ?? false;
+    string Username = ViewBag.Username ?? "";
 
     ViewData["MetaTagDescription"] = "Use LastMinutes to check your total listening time in minutes from your LastFM account!";
 
 }
+@section Scripts{
+    <script>
+
+        function UpdateLeaderboardSwitch() {
+            var select = document.getElementById('TimeFrameSelect');
+            var leadSwitch = document.getElementById('leaderboardSwitch');
+            var leadSwitchLabel = document.getElementById('leaderboardSwitchLabel');
+
+
+            if (select.value != 3) {
+                leadSwitch.checked = false;
+                leadSwitch.disabled = true;
+                leadSwitchLabel.innerHTML = "Submit results to leaderboard.<br>(Only available for the last 30 days time frame)";
+            } else {
+                leadSwitch.disabled = false;
+                leadSwitch.checked = true;
+                leadSwitchLabel.innerHTML = "Submit results to leaderboard.";
+            }
+        }
+
+    </script>
+}
+
 
 
 <div class="col-12 col-md-5 mt-auto mb-0">
@@ -29,32 +52,63 @@
 
             <form asp-action="CheckMinutes" asp-controller="LastMinutes" method="POST">
 
-                <input class="form-control" type="text" name="username" placeholder="Last.FM Username" required />
-                
-                <br />
-                <div class="col d-flex flex-wrap justify-content-between">
+                <div class="col-12 d-flex justify-content-center flex-wrap">
 
-                    <div class="col col-md-6 my-2">
-                       
-                        <select class="form-select form-select-sm" name="Mode" aria-label="Over Time">
-                            <option value="1">Over All Time</option>
-                            <option value="2">Over The Last Week</option>
-                            <option value="3" selected>Over The Last Month</option>
-                            <option value="4">Over The Last Year</option>
-                            <option value="5">This Week</option>
-                            <option value="6">This Month</option>
-                            <option value="7">This Year</option>
-                        </select>
-                        
+                    <div class="col-12 my-1">
+                        <input class="form-control" type="text" asp-for="username" value="@Username" placeholder="Last.FM Username" required />
+                    </div>
+
+                    <div class="col-12 my-1">
+                        <div class="col col-md-6 my-2">
+
+                            <select class="form-select form-select-sm" asp-for="Mode" aria-label="Over Time" onchange="UpdateLeaderboardSwitch()" id="TimeFrameSelect">
+                                <option value="1">Over All Time</option>
+                                <option value="2">Over The Last Week</option>
+                                <option value="3" selected>Over The Last Month</option>
+                                <option value="4">Over The Last Year</option>
+                                <option value="5">This Week</option>
+                                <option value="6">This Month</option>
+                                <option value="7">This Year</option>
+                            </select>
+
+                        </div>
+                    </div>
+
+                    <div class="col-12 my-1">
+
+                        <a class="text-decoration-none fw-bold link-light goldhover" data-bs-toggle="collapse" href="#extraOptions" role="button" aria-expanded="false" aria-controls="extraOptions">Extra Options</a>
+
+                        <div class="collapse" id="extraOptions">
+                            <div class="card card-body text-light bg-dark border-0">
+
+                                <div class="col-12 my-1">
+
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="leaderboardSwitch" asp-for="leaderboardSwitchInput" checked>
+                                        <label class="form-check-label" for="leaderboardSwitch" id="leaderboardSwitchLabel">Submit Results to Leaderboard</label>
+                                    </div>
+
+
+                                </div>
+
+                            </div>
+                        </div>
+
+
                     </div>
 
 
-                    <div class="col-12 col-md-4 d-grid gap-2 my-2">
-                        <button type="submit" class="btn btn-outline-light mb-3">View Results</button>
+                    <div class="col-12 my-1">
+
+                        <div class="col-12 col-md-4 d-grid gap-2 my-2">
+                            <button type="submit" class="btn btn-outline-light mb-3">View Results</button>
+                        </div>
+
                     </div>
+
+
 
                 </div>
-
 
 
             </form>
@@ -64,6 +118,8 @@
 
 
         <p>
+            <br>
+            <a asp-action="Leaderboard" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Leaderboard</a>
             <br>
             <a asp-action="Faq" asp-controller="LastMinutes" class="fw-bold text-decoration-none link-light goldhover">Frequently Asked Questions</a>
             <br>

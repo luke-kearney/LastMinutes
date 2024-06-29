@@ -15,6 +15,8 @@ namespace LastMinutes.Models.LMData
 
         public int Mode { get; set; }
 
+        public bool submitToLeaderboard { get; set; } = false;
+
         public string Status { get; set; } = string.Empty;
 
         public Queue()

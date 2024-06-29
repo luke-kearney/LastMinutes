@@ -1,0 +1,93 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - LastMinutes</title>
+    <link rel="stylesheet" href="~/css/bootstrap/bootstrap.css" />
+
+    <meta name="robots" content="noindex" />
+
+    <!-- Start Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon/favicon-16x16.png" />
+
+    <link rel="manifest" href="/img/favicon/manifest.json" />
+    <meta name="theme-color" content="" />
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/favicon/apple-touch-icon.png" />
+    <!-- End Favicons -->
+
+    <style>
+        /* width */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        /* Track */
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+
+            /* Handle on hover */
+            ::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+
+        .goldhover:hover {
+            color: gold; /* Change the color to red on hover */
+        }
+    </style>
+
+</head>
+<body class=" bg-dark vh-100 d-flex align-items-start align-items-md-center justify-content-center">
+
+    <div class="container py-5">
+        <main role="main" class="text-white">
+            <div class="d-flex flex-wrap justify-content-center">
+
+                
+                <div class="col-12 col-lg-3 my-auto">
+                    <h1><a asp-action="Index" asp-controller="LastMinutes" class="text-decoration-none link-light goldhover">LastMinutes</a></h1>
+                    <h3>The Leaderboard</h3>
+                    <h5>of the last three months.</h5>
+
+                    <p class="py-2">These leaderboard entries are only taken from results where the time frame is the last month.</p>
+                    <br />
+                    <h6>Total Minutes Tallied Over All Time</h6>
+                    @{
+                        string TotalMinutes = ViewData["TotalMinutes"]?.ToString() ?? "0";
+                    }
+
+                    <h3 class="my-1 mt-0 pt-0"><b>@TotalMinutes </b> minutes</h3>
+                    
+                </div>
+                
+
+                <div class="col d-flex justify-content-center flex-wrap">
+                    @RenderBody()
+                </div>
+
+            </div>
+            
+        </main>
+    </div>
+
+    <footer class="border-top border-dark fixed-bottom footer text-muted bg-dark text-center">
+        <div class="container">
+            <span class="fw-normal">
+                &copy; 2024 - LastMinutes (@ViewData["AppVersionComplete"]) by <a href="" class="link-secondary text-decoration-none fw-bold goldhover">mrdawgza</a>
+            </span>
+        </div>
+    </footer>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="~/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

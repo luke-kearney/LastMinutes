@@ -10,7 +10,7 @@ namespace LastMinutes.Services
 
     public interface IQueueManager
     {
-        public Task<bool> AddUsernameToQueue(string username, int mode);
+        public Task<bool> AddUsernameToQueue(string username, int mode, bool submitToLeaderboard = false);
         public Task<bool> InQueue(string username);
         public Task<bool> IsFinished(string username);
         public Task<bool> RemoveResults(string username);
@@ -55,7 +55,7 @@ namespace LastMinutes.Services
         }
 
 
-        public async Task<bool> AddUsernameToQueue(string username, int mode)
+        public async Task<bool> AddUsernameToQueue(string username, int mode, bool submitToLeaderboard = false)
         {
             if (username == null || username == string.Empty)
             {
@@ -82,6 +82,11 @@ namespace LastMinutes.Services
                 mode = 3;
             }
 
+            if (mode != 3)
+            {
+                submitToLeaderboard = false;
+            }
+
             LastMinutes.Models.LMData.Queue? CheckExists = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username);
             if (CheckExists == null)
             {
@@ -89,6 +94,7 @@ namespace LastMinutes.Services
                 {
                     Username = username,
                     Mode = mode,
+                    submitToLeaderboard = submitToLeaderboard,
                     Status = "Currently waiting in queue..."
                 };
 
@@ -117,7 +123,7 @@ namespace LastMinutes.Services
                 return false;
             }
 
-            Models.LMData.Queue QueueItem = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username);
+            Models.LMData.Queue? QueueItem = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username);
 
             if (QueueItem == null)
             {
@@ -135,7 +141,7 @@ namespace LastMinutes.Services
                 return false;
             }
 
-            Models.LMData.Results result = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username == username);
+            Models.LMData.Results? result = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username == username);
 
             if (result == null)
             {
@@ -149,7 +155,7 @@ namespace LastMinutes.Services
 
         public async Task<bool> RemoveResults(string username)
         {
-            Models.LMData.Results results = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username.ToUpper() ==  username.ToUpper());
+            Models.LMData.Results? results = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username.ToUpper() ==  username.ToUpper());
             if (results == null) { return false;}
 
             _lmdata.Results.Remove(results);
@@ -168,7 +174,7 @@ namespace LastMinutes.Services
         {
             if (string.IsNullOrEmpty(username)) { return "Error"; }
 
-            Models.LMData.Queue queue = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username);
+            Models.LMData.Queue? queue = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username);
 
             if (queue == null)
             {
@@ -276,7 +282,7 @@ namespace LastMinutes.Services
             string lastFmUsername = username.ToUpper();
 
             // Get the created_on
-            LastMinutes.Models.LMData.Results Result = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username.ToUpper() == lastFmUsername );
+            LastMinutes.Models.LMData.Results? Result = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username.ToUpper() == lastFmUsername );
             if (Result == null)
             {
                 return false;
@@ -305,7 +311,7 @@ namespace LastMinutes.Services
         public async Task<int> Cooldown(string username)
         {
             string lastFmUsername = username.ToUpper();
-            LastMinutes.Models.LMData.Results Result = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username.ToUpper() == lastFmUsername);
+            LastMinutes.Models.LMData.Results? Result = await _lmdata.Results.FirstOrDefaultAsync(x => x.Username.ToUpper() == lastFmUsername);
             if (Result == null)
             {
                 return 0;
