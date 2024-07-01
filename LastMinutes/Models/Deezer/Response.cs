@@ -61,6 +61,9 @@ namespace LastMinutes.Models.Deezer
 
         [JsonProperty("type")]
         public string Type { get; set; }
+
+        public int SimilarityScore { get; set; } = 0;
+        public int SimilarityScoreArtistName { get; set; } = 0;
     }
 
     public class DeezerArtist

@@ -5,6 +5,10 @@ using Microsoft.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
 using LastMinutes.ActionFilters;
 
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.SystemConsole;
+
 var builder = WebApplication.CreateBuilder(args);
 
 #region Load Configuration File(s)
@@ -12,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
 configuration.AddJsonFile("AppData/dataSettings.json");
 configuration.AddJsonFile("AppData/apiConnections.json");
+configuration.AddJsonFile("AppData/serilog.json", optional: false, reloadOnChange: true);
 configuration.AddJsonFile("AppData/specialAccounts.json", optional: true, reloadOnChange: true);
 configuration.AddJsonFile("AppData/messages.json", optional: true, reloadOnChange: true);
 
@@ -110,6 +115,18 @@ builder.Services.AddControllersWithViews(options =>
 });
 
 builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
+
+#endregion
+
+
+#region Serilog
+
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 #endregion
 

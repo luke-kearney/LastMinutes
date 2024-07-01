@@ -4,6 +4,7 @@ using LastMinutes.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LastMinutes.Migrations
 {
     [DbContext(typeof(LMData))]
-    partial class LMDataModelSnapshot : ModelSnapshot
+    [Migration("20240701135019_AddedSearchDiagnosticsForCache")]
+    partial class AddedSearchDiagnosticsForCache
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -173,12 +175,6 @@ namespace LastMinutes.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Runtime")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SimilarityScore_ArtistName")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SimilarityScore_Title")
                         .HasColumnType("int");
 
                     b.Property<string>("Source")

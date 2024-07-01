@@ -19,7 +19,6 @@ namespace LastMinutes.Services
 
         public Task<List<Dictionary<string, string>>> FetchScrobblesPerPage(string username, int page, string to, string from);
 
-        public Task<Scrobble> GetScrobbleLength(Scrobble scrobble);
 
         public Dictionary<(string, string), int> AccumulateTrackPlays(List<Dictionary<string, string>> AllScrobbles);
 
@@ -32,6 +31,7 @@ namespace LastMinutes.Services
     public class LastFMGrabber : ILastFMGrabber
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<LastFMGrabber> _logger;
         private readonly IConfiguration _config;
 
         private string LastFMApiUrl = string.Empty;
@@ -43,13 +43,15 @@ namespace LastMinutes.Services
 
         public LastFMGrabber(
             IServiceProvider serviceProvider,
+            ILogger<LastFMGrabber> logger,
             IConfiguration config) 
         { 
             _serviceProvider = serviceProvider;
+            _logger = logger;
             _config = config;   
 
-            LastFMApiUrl = config.GetValue<string>("LastFMApiUrl");
-            LastFMApiKey = config.GetValue<string>("LastFMApiKey");
+            LastFMApiUrl = config.GetValue<string>("LastFMApiUrl") ?? "";
+            LastFMApiKey = config.GetValue<string>("LastFMApiKey") ?? "";
            // EnableCaching = config.GetValue<bool>("EnableCaching");
         }
 
@@ -90,7 +92,7 @@ namespace LastMinutes.Services
                 {
                     response = await client.GetAsync(url);
                     Retries++;
-                    Console.WriteLine($"[LastFM] {username} - error occurred while pulling scrobbles, retrying... ({Retries} / 5)");
+                    _logger.LogWarning("[LastFM] {Username} - error occurred while pulling scrobbles, retrying... ({Retries} / 5)", username, Retries);
                 }
 
                 if (response.IsSuccessStatusCode)
@@ -131,83 +133,14 @@ namespace LastMinutes.Services
                     return scrobblesPerPage;
                 } else
                 {
-                    Console.WriteLine($"[LastFM] {username} - error occurred while pulling scrobbles, all retries failed..");
+                    _logger.LogError("[LastFM] {Username} - error occurred while pulling scrobbles, all retries failed..", username);
                     return new List<Dictionary<string, string>>();
                 }
 
             }
         }
 
-        public async Task<Scrobble> GetScrobbleLength(Scrobble scrobble)
-        {
-            await semaphoreSlim.WaitAsync();
-            try
-            {
-                string url = $"{LastFMApiUrl}?method=track.getInfo&api_key={LastFMApiKey}&format=json&artist={scrobble.ArtistName}&track={scrobble.TrackName}";
-
-                using (HttpClient client = new HttpClient())
-                {
-                    HttpResponseMessage response = await client.GetAsync(url);
-                    int Retries = 0;
-                    while (!response.IsSuccessStatusCode && Retries < 5)
-                    {
-                        response = await client.GetAsync(url);
-                        Retries++;
-                        Console.WriteLine($"[LastFM] '{scrobble.TrackName}' by '{scrobble.ArtistName}' - error occurred while getting scrobble runtime, retrying... ({Retries} / 5)");
-                    }
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        string responseBody = await response.Content.ReadAsStringAsync();
-                        LastFmTrack TrackData = JsonConvert.DeserializeObject<LastFmTrack>(responseBody)!;
-
-                        scrobble.Runtime = 0;
-
-                        if (TrackData != null)
-                        {
-                            if (TrackData.track != null)
-                            {
-                                Int32.TryParse(TrackData.track.duration, out int foundRuntime);
-                                scrobble.Runtime = foundRuntime;
-
-                                if (foundRuntime != 0)
-                                {
-                                    using (var scope = _serviceProvider.CreateScope())
-                                    {
-                                        LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
-                                        Tracks CacheTrack = new Tracks()
-                                        {
-                                            Name = TrackData.track.name,
-                                            Artist = TrackData.track.artist.name,
-                                            Runtime = foundRuntime,
-                                            Date_Added = DateTime.Now,
-                                            Last_Used = DateTime.Now,
-                                            Source = "Last.FM"
-                                        };
-                                        _lmdata.Tracks.Add(CacheTrack);
-                                        await _lmdata.SaveChangesAsync();
-                                        Console.WriteLine($"[Last.FM] Found track '{scrobble.TrackName}' by '{scrobble.ArtistName}' with a runtime of {scrobble.Runtime}");
-                                    }
-
-                                }
-                            }
-                            
-                        }
-
-                        return scrobble;
-                    }
-                    else
-                    {
-                        scrobble.Runtime = 0;
-                        return scrobble;
-                    }
-                }
-            }
-            finally
-            {
-               semaphoreSlim.Release();
-            }
-        }
+        
 
         #region Get Scrobbles WITH runtime
 
@@ -229,7 +162,7 @@ namespace LastMinutes.Services
                     {
                         response = await client.GetAsync(url);
                         Retries++;
-                        Console.WriteLine($"[LastFM] Failed to retrieve page '{page}' for '{username}', retrying... ({Retries} / 5)");
+                        _logger.LogWarning("[LastFM] Failed to retrieve top tracks page {Page} for {Username}, retrying... ({Retries} / 5)", page, username, Retries);
                     }
 
                     if (response.IsSuccessStatusCode)
@@ -309,7 +242,7 @@ namespace LastMinutes.Services
                 {
                     response = await client.GetAsync(url);
                     Retries++;
-                    Console.WriteLine($"[LastFM] Failed to retrieve total Top Tracks pages, retrying... ({Retries} / 5)");
+                    _logger.LogWarning("[LastFM] Failed to retrieve total amount of Top Tracks pages for {Username}, retrying... ({Retries} / 5)", username, Retries);
                 }
 
                 if (response.IsSuccessStatusCode)
@@ -348,7 +281,7 @@ namespace LastMinutes.Services
                 }
                 else
                 {
-                    Console.WriteLine($"Error: {response.StatusCode}");
+                    _logger.LogError("[LastFM] Error occurred when trying to get total pages for user {Username}. Status code: {StatusCode}", username, response.StatusCode);
                     return 0;
                 }
             }

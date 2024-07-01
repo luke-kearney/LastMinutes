@@ -4,6 +4,7 @@ using LastMinutes.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LastMinutes.Migrations
 {
     [DbContext(typeof(LMData))]
-    partial class LMDataModelSnapshot : ModelSnapshot
+    [Migration("20240701142015_AddedSearchExtraDiagForCache")]
+    partial class AddedSearchExtraDiagForCache
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

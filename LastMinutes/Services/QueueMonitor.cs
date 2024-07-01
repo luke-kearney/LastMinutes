@@ -18,20 +18,33 @@ namespace LastMinutes.Services
     public class QueueMonitor : BackgroundService
     {
 
-        private readonly ILastFMGrabber _lastfm;
-        private readonly ISpotifyGrabber _spotify;
-        private readonly IMusicBrainz _mb;
-        private readonly IDeezerGrabber _deezer;
-        private readonly IServiceProvider _serviceProvider;
+        #region Dependancy Injection & Class Constructor
 
-        public QueueMonitor(ILastFMGrabber lastfm, ISpotifyGrabber spotify, IServiceProvider serviceProvider, IMusicBrainz mb, IDeezerGrabber deezer)
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<QueueMonitor> _logger;
+        private readonly ISpotifyGrabber _spotify;
+        private readonly IDeezerGrabber _deezer;
+        private readonly ILastFMGrabber _lastfm;
+        private readonly IMusicBrainz _mb;
+
+        public QueueMonitor(ILastFMGrabber lastfm, 
+            IServiceProvider serviceProvider,
+            ILogger<QueueMonitor> logger,
+            ISpotifyGrabber spotify,
+            IDeezerGrabber deezer,
+            IMusicBrainz mb)
         {
-            _lastfm = lastfm;
             _serviceProvider = serviceProvider;
             _spotify = spotify;
-            _mb = mb;
+            _logger = logger;
             _deezer = deezer;
+            _lastfm = lastfm;
+            _mb = mb;
         }
+
+        #endregion
+
+
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -45,424 +58,451 @@ namespace LastMinutes.Services
                     await ClearOldLeaderboardEntries();
                 } catch (Exception e)
                 {
-                    Console.WriteLine("");
-                    Console.WriteLine("QueueMonitor.cs Experienced A Severe Fault and the BackgroundService has stopped!!");
-                    Console.WriteLine(e.Message.ToString());
-                    Console.WriteLine("Restarting BackgroundService in 30 seconds...");
+                    _logger.LogError(e, "QueueMonitor.cs Experienced a critical fault and the background service has stopped! Restarting service in 30 seconds...");
                     await Task.Delay(TimeSpan.FromSeconds(30));
                 }
-                
-
-
             }
         }
 
 
-        private async Task CheckDatabase()
-        {
 
+        /// <summary>
+        /// This is the main worker method for this application. It processes the queue and retrieves the scrobble data for each user.
+        /// </summary>
+        /// <returns>Bool</returns>
+        private async Task<bool> CheckDatabase()
+        {
             using (var scope = _serviceProvider.CreateScope())
             {
                 LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
 
                 int QueueLength = _lmdata.Queue.Count();
 
-                if (QueueLength > 0)
+                if (QueueLength == 0)
                 {
-                    Console.WriteLine($"[Queue] Current queue size is {QueueLength.ToString()}, beginning processing...");
-                    Models.LMData.Queue item = _lmdata.Queue.FirstOrDefault();
-                    if (item != null)
-                    {
+                    _logger.LogInformation("[Queue] Current queue size is 0.");
+                    return false;
+                }
 
-                        #region Get Mode Strings
+                
+                _logger.LogInformation("[Queue] Current queue size is {QueueLength}, beginning processing.", QueueLength.ToString());
+                Models.LMData.Queue? item = _lmdata.Queue.FirstOrDefault();
 
-                        string to = "";
-                        string from = "";
-                        string TimeFrame = "";
+                if (item == null)
+                    return false;
+                   
 
-                        switch (item.Mode)
-                        {
-                            case 1:
-                                // All time
-                                TimeFrame = "all time";
-                                break;
-                            case 2:
-                                // Last week
-                                TimeFrame = "the last week";
-                                from = DateTimeOffset.UtcNow.AddDays(-7).ToUnixTimeSeconds().ToString();
-                                to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-                                break;
-                            case 3:
-                                // Last month
-                                TimeFrame = "the last month";
-                                from = DateTimeOffset.UtcNow.AddMonths(-1).ToUnixTimeSeconds().ToString();
-                                to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-                                break;
-                            case 4:
-                                // Last year
-                                TimeFrame = "the last year";
-                                from = DateTimeOffset.UtcNow.AddYears(-1).ToUnixTimeSeconds().ToString();
-                                to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-                                break;
-                            case 5:
-                                // This week
-                                TimeFrame = "this week";
-                                from = DateTimeOffset.UtcNow.AddDays(-DateTimeOffset.UtcNow.DayOfWeek.GetHashCode()).ToUnixTimeSeconds().ToString();
-                                to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-                                break;
-                            case 6:
-                                // This month
-                                TimeFrame = "this month";
-                                from = DateTimeOffset.UtcNow.AddDays(-DateTimeOffset.UtcNow.Day).ToUnixTimeSeconds().ToString();
-                                to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-                                break;
-                            case 7:
-                                // This year
-                                TimeFrame = "this year";
-                                from = DateTimeOffset.UtcNow.AddDays(-DateTimeOffset.UtcNow.DayOfYear).ToUnixTimeSeconds().ToString();
-                                to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-                                break;
-                            default:
-                                TimeFrame = "all time";
-                                from = DateTimeOffset.UtcNow.AddMonths(-1).ToUnixTimeSeconds().ToString();
-                                break;
-                        }
-                        #endregion
+                #region Get Mode Strings
 
-                        await UpdateStatus(item, "Beginning processing...");
+                string to = "";
+                string from = "";
+                string TimeFrame = "";
 
-                        // Populate 
-                        List<Dictionary<string, string>> AllScrobbles = new List<Dictionary<string, string>>();
+                switch (item.Mode)
+                {
+                    case 1:
+                        // All time
+                        TimeFrame = "all time";
+                        break;
+                    case 2:
+                        // Last week
+                        TimeFrame = "the last week";
+                        from = DateTimeOffset.UtcNow.AddDays(-7).ToUnixTimeSeconds().ToString();
+                        to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                        break;
+                    case 3:
+                        // Last month
+                        TimeFrame = "the last month";
+                        from = DateTimeOffset.UtcNow.AddMonths(-1).ToUnixTimeSeconds().ToString();
+                        to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                        break;
+                    case 4:
+                        // Last year
+                        TimeFrame = "the last year";
+                        from = DateTimeOffset.UtcNow.AddYears(-1).ToUnixTimeSeconds().ToString();
+                        to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                        break;
+                    case 5:
+                        // This week
+                        TimeFrame = "this week";
+                        from = DateTimeOffset.UtcNow.AddDays(-DateTimeOffset.UtcNow.DayOfWeek.GetHashCode()).ToUnixTimeSeconds().ToString();
+                        to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                        break;
+                    case 6:
+                        // This month
+                        TimeFrame = "this month";
+                        from = DateTimeOffset.UtcNow.AddDays(-DateTimeOffset.UtcNow.Day).ToUnixTimeSeconds().ToString();
+                        to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                        break;
+                    case 7:
+                        // This year
+                        TimeFrame = "this year";
+                        from = DateTimeOffset.UtcNow.AddDays(-DateTimeOffset.UtcNow.DayOfYear).ToUnixTimeSeconds().ToString();
+                        to = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+                        break;
+                    default:
+                        TimeFrame = "all time";
+                        from = DateTimeOffset.UtcNow.AddMonths(-1).ToUnixTimeSeconds().ToString();
+                        break;
+                }
+                #endregion
 
-                        LastFMUserData LastFMUser = await _lastfm.GetUserData(item.Username);
-                        int TotalLastFmPages = await _lastfm.GetTotalPages(item.Username, to, from);
-                        int MaxRequests = 25;
+                await UpdateStatus(item, "Beginning processing...");
+
+                // Populate 
+                List<Dictionary<string, string>> AllScrobbles = new List<Dictionary<string, string>>();
+
+                LastFMUserData LastFMUser = await _lastfm.GetUserData(item.Username);
+                int TotalLastFmPages = await _lastfm.GetTotalPages(item.Username, to, from);
+                int MaxRequests = 25;
 
 
-                        if (LastFMUser.User != null)
-                        {
-                            #region Last.FM Scrobble Grabbing
+                if (LastFMUser == null)
+                {
+                    await ClearFromQueue(item);
+                    return false;
+                }
+
+               
+                #region Last.FM Scrobble Grabbing
                             
-                            var tasks = new List<Task<List<Dictionary<string, string>>>>();
-
-                            for (int page = 1; page <= TotalLastFmPages; page++)
-                            {
-                                tasks.Add(_lastfm.FetchScrobblesPerPage(item.Username, page, to, from));
-                                // Limit the amount of concurrent requests.
-                                if (tasks.Count >= MaxRequests || page == TotalLastFmPages)
-                                {
-                                    // Await all tasks if we reached the maximum or if it's the last page.
-                                    var batchResults = await Task.WhenAll(tasks);
-
-                                    // Combine results from all tasks in htis batch
-                                    foreach (var result in batchResults)
-                                    {
-                                        AllScrobbles.AddRange(result);
-                                        if (result.Count == 0)
-                                        {
-                                            Console.WriteLine("[Queue] There was a request error to Last.FM. Some scrobbles may be missing!");
-                                        }
-                                    }
-                                    Console.WriteLine($"[Queue] Loaded Last.FM up to pages {page.ToString()}/{TotalLastFmPages.ToString()}");
-                                    await UpdateStatus(item, $"Found Last.FM page {page}/{TotalLastFmPages}");
-
-                                    tasks.Clear();
-
-                                }
-                            }
-
-                            // Create dictionary for scrobbles with their total count 
-                            Dictionary<(string trackName, string artistName), int> ScrobblesAccumulatedPlays = _lastfm.AccumulateTrackPlays(AllScrobbles);
-                            int TotalTracks = ScrobblesAccumulatedPlays.Count();
-
-                            List<Scrobble> AccumulatedScrobbles = new List<Scrobble>();
-                            foreach (var dd in ScrobblesAccumulatedPlays)
-                            {
-                                AccumulatedScrobbles.Add(new Scrobble()
-                                {
-                                    TrackName = dd.Key.trackName,
-                                    ArtistName = dd.Key.artistName,
-                                    Count = dd.Value
-                                });
-                            }
-
-                            #endregion
-
-
-                            Console.WriteLine($"[Queue] {item.Username} - Account Scrobbles: {LastFMUser.User.Playcount}");
-                            Console.WriteLine($"[Queue] {item.Username} - Loaded Scrobbles: {AllScrobbles.Count()}");
-                            //Console.WriteLine($"[Queue] {item.Username} - Loaded Tracks: {ScrobblesAccumulatedPlays.Count()}");
-                            //Console.WriteLine($"[Queue] {item.Username} - Loaded Tracks: {ScrobblesAccumulatedPlays.Count()}");
-
-                            #region Cache Loading
-
-
-                            List<Scrobble> ProcessedScrobbles = new List<Scrobble>();
-                            List<Scrobble> UncachedScrobbles = new List<Scrobble>();
-                            List<Scrobble> UnfoundScrobbles = new List<Scrobble>();
-                            List<Scrobble> FoundScrobbles = new List<Scrobble>();
-
-                            await UpdateStatus(item, $"Searching on Last.FM for minutes..");
-
-                            int TotalTopPages = await _lastfm.GetTopPagesTotal(item.Username);
-                            var TopTasks = new List<Task<List<Scrobble>>>();
-                            for (int i = 1; i <= TotalTopPages; i++)
-                            {
-                                var task = _lastfm.GetScrobbles(item.Username, i);
-                                TopTasks.Add(task);
-                            }
-
-                            await Task.WhenAll(TopTasks);
-                            foreach (var task in TopTasks)
-                            {
-                                List<Scrobble> result = await task;
-                                foreach (Scrobble scrob in result)
-                                {
-                                    if (scrob.Runtime != 0)
-                                    { 
-                                        FoundScrobbles.Add(scrob);
-                                    } 
-
-                                }
-                            }
-
-                            foreach (Scrobble Ascrob in AccumulatedScrobbles)
-                            {
-
-                                Scrobble FoundScrob = FoundScrobbles.Where(x => x.TrackName ==  Ascrob.TrackName && x.ArtistName == Ascrob.ArtistName).FirstOrDefault()!;
-                                if (FoundScrob != null)
-                                {
-                                    Ascrob.Runtime = FoundScrob.Runtime;
-                                    Ascrob.TotalRuntime = FoundScrob.Runtime * Ascrob.Count;
-                                    ProcessedScrobbles.Add(Ascrob);
-                                } else
-                                {
-                                    UnfoundScrobbles.Add(Ascrob);
-                                }
-
-                            }
-
-
-                            await UpdateStatus(item, $"Finding cached tracks...");
-
-                            List<Tracks> AllCached = await _lmdata.Tracks.ToListAsync();
-
-
-                            foreach (Scrobble SearchFor in UnfoundScrobbles)
-                            {
-                                Tracks found = AllCached.FirstOrDefault(x =>
-                                                                            string.Equals(x.Name, SearchFor.TrackName, StringComparison.OrdinalIgnoreCase) &&
-                                                                            string.Equals(x.Artist, SearchFor.ArtistName, StringComparison.OrdinalIgnoreCase))!;
-
-                                if (found != null)
-                                {
-                                    ProcessedScrobbles.Add(new Scrobble()
-                                    {
-                                        TrackName = SearchFor.TrackName,
-                                        ArtistName = SearchFor.ArtistName,
-                                        Count = SearchFor.Count,
-                                        Runtime = found.Runtime,
-                                        TotalRuntime = found.Runtime * SearchFor.Count
-                                    });
-                                }
-                                else
-                                {
-                                    UncachedScrobbles.Add(new Scrobble()
-                                    {
-                                        TrackName = SearchFor.TrackName,
-                                        ArtistName = SearchFor.ArtistName,
-                                        Count = SearchFor.Count
-                                    });
-                                }
-                            }
-
-                            #endregion
-
-
-                            Console.WriteLine($"[Queue] Total cached tracks: {ProcessedScrobbles.Count}");
-                            Console.WriteLine($"[Queue] Total uncached scrobbles: {UncachedScrobbles.Count}");
-
-
-                            #region Metadata Grabbing
-
-                            #region Last.FM
-                            /*
-                            await UpdateStatus(item, $"Searching minutes on Last.FM for {UncachedScrobbles.Count} tracks.");
-
-                            // Try get scrobble runtime from Last.FM
-
-                            var ScrobbleTasks = new List<Task<Scrobble>>();
-                            foreach (Scrobble sgd in UncachedScrobbles)
-                            {
-                                var task = _lastfm.GetScrobbleLength(sgd);
-                                ScrobbleTasks.Add(task);
-                            }
-
-                            await Task.WhenAll(ScrobbleTasks);
-
-                            foreach (var task in ScrobbleTasks)
-                            {
-                                Scrobble result = await task;
-                                if (result.Runtime != 0)
-                                {
-                                    ProcessedScrobbles.Add(result);
-                                    UncachedScrobbles.Remove(result);
-                                }
-                            }
-
-                            Console.WriteLine($"[Queue] Last.FM search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
-
-                            await Task.Delay(TimeSpan.FromSeconds(3));
-                            */
-                            #endregion
-
-
-
-                            // Search Deezer for all things scrobbles
-                            #region Deezer
-                            await UpdateStatus(item, $"Searching minutes on Deezer for {UncachedScrobbles.Count} tracks.");
-                            var DeezerTasks = new List<Task<Scrobble>>();
-                            foreach (Scrobble sgd in UncachedScrobbles)
-                            {
-                                var task = _deezer.GetScrobbleData(sgd);
-                                DeezerTasks.Add(task);
-                            }
-
-                            await Task.WhenAll(DeezerTasks);
-                            int SetCountTracks = UncachedScrobbles.Count;
-                            foreach (var task in DeezerTasks)
-                            {
-                                Scrobble result = await task;
-                                if (result.Runtime != 0)
-                                {
-                                    ProcessedScrobbles.Add(result);
-                                    UncachedScrobbles.Remove(result);
-                                }
-                            }
-
-                            Console.WriteLine($"[Queue] Deezer search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
-                            #endregion
-
-
-                            //Get Spotify auth token
-                            #region Spotify Auth Token
-
-                            string SpotifyAuthToken = await _spotify.GetAccessToken();
-                            while (SpotifyAuthToken == "tokenfailure")
-                            {
-                                Console.WriteLine("[Spotify] Failed to retrieve an auth token from Spotify. Retrying...");
-                                await Task.Delay(TimeSpan.FromSeconds(5));
-                                SpotifyAuthToken = await _spotify.GetAccessToken();
-                            }
-                            #endregion
-
-
-                            // Search Spotify for all things scrobbles
-                            #region Spotify
-                            await UpdateStatus(item, $"Searching minutes on Spotify for {UncachedScrobbles.Count} tracks.");
-                            var SpotifyTasks = new List<Task<Scrobble>>();
-                            foreach (Scrobble sgd in UncachedScrobbles)
-                            {
-                                var task = _spotify.GetScrobbleData(sgd, SpotifyAuthToken);
-                                SpotifyTasks.Add(task);
-                            }
-
-                            await Task.WhenAll(SpotifyTasks);
-
-                            foreach (var task in SpotifyTasks)
-                            {
-                                Scrobble result = await task;
-                                if (result.Runtime != 0)
-                                {
-                                    ProcessedScrobbles.Add(result);
-                                    UncachedScrobbles.Remove(result);
-                                }
-                            }
-
-                            Console.WriteLine($"[Queue] Spotify search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
-
-                            #endregion
-
-
-
-                            #endregion
-
-
-                            Console.WriteLine($"[Queue] Total Calculated Tracks: {ProcessedScrobbles.Count}");
-                            await UpdateStatus(item, $"Searching complete. Could not find minutes for {UncachedScrobbles.Count} tracks.");
-
-                            long TotalRuntime = 0;
-
-                            // Calculate total runtime
-                            foreach (Scrobble ctr in ProcessedScrobbles)
-                            {
-                                TotalRuntime += ctr.TotalRuntime;
-                            }
-
-                            Console.WriteLine($"[Queue] Total Calculated Minutes: {_spotify.ConvertMsToMinutes(TotalRuntime)} minutes ({TotalRuntime})");
-
-                            List<Scrobble> TopScrobbles = ProcessedScrobbles
-                                .OrderByDescending(kvp => kvp.TotalRuntime)
-                                .Take(25)
-                                .ToList();
-
-                            List<Scrobble> BadScrobbles = UncachedScrobbles
-                                .Where(kvp => kvp.Count >= 1)
-                                .OrderByDescending(kvp => kvp.Count)
-                                .Take(100)
-                                .ToList();
-
-                            /* foreach (var Song in TopTenMinutes)
-                             {
-                                 Console.WriteLine($"[Queue] BadScrobble: {Song.TrackName} by {Song.ArtistName}, count of {Song.Count}");
-                             }*/
-
-                            Models.LMData.Results Result = new Models.LMData.Results()
-                            {
-                                Username = item.Username,
-                                TotalPlaytime = TotalRuntime,
-                                AllScrobbles = JsonConvert.SerializeObject(TopScrobbles),
-                                BadScrobbles = JsonConvert.SerializeObject(BadScrobbles),
-                                Created_On = DateTime.Now,
-                                TimeFrame = TimeFrame
-                            };
-
-                            if (from != string.Empty && to != string.Empty)
-                            {
-                                Result.FromWhen = DateTimeOffset.FromUnixTimeSeconds(int.Parse(from)).DateTime;
-                                Result.ToWhen = DateTimeOffset.FromUnixTimeSeconds(int.Parse(to)).DateTime;
-                            }
-
-                            await RemoveResults(item.Username);
-
-                            _lmdata.Results.Add(Result);
-
-                            if (await _lmdata.SaveChangesAsync() > 0)
-                            {
-                                await UpdateStats(Result.TotalPlaytime);
-                            }
-
-                            await SubmitToLeaderboard(item, ConvertMsToMinutesLong(TotalRuntime));
-
-                            await ClearFromQueue(item);
-
-                        }
-                        else
+                var tasks = new List<Task<List<Dictionary<string, string>>>>();
+
+                for (int page = 1; page <= TotalLastFmPages; page++)
+                {
+                    tasks.Add(_lastfm.FetchScrobblesPerPage(item.Username, page, to, from));
+                    // Limit the amount of concurrent requests.
+                    if (tasks.Count >= MaxRequests || page == TotalLastFmPages)
+                    {
+                        // Await all tasks if we reached the maximum or if it's the last page.
+                        var batchResults = await Task.WhenAll(tasks);
+
+                        // Combine results from all tasks in htis batch
+                        foreach (var result in batchResults)
                         {
-                            await ClearFromQueue(item);
+                            AllScrobbles.AddRange(result);
+                            if (result.Count == 0)
+                            {
+                                _logger.LogWarning("[Queue] There was a request error to Last.FM. Some scrobbles may be missing!");
+                            }
                         }
+                        _logger.LogInformation("[Queue] Loaded Last.FM pages {Step}/{TotalPages}", page.ToString(), TotalLastFmPages.ToString());
+                        await UpdateStatus(item, $"Found Last.FM page {page}/{TotalLastFmPages}");
+
+                        tasks.Clear();
+
+                    }
+                }
+
+                // Create dictionary for scrobbles with their total count 
+                Dictionary<(string trackName, string artistName), int> ScrobblesAccumulatedPlays = _lastfm.AccumulateTrackPlays(AllScrobbles);
+                int TotalTracks = ScrobblesAccumulatedPlays.Count();
+
+                List<Scrobble> AccumulatedScrobbles = new List<Scrobble>();
+                foreach (var dd in ScrobblesAccumulatedPlays)
+                {
+                    AccumulatedScrobbles.Add(new Scrobble()
+                    {
+                        TrackName = dd.Key.trackName,
+                        ArtistName = dd.Key.artistName,
+                        Count = dd.Value
+                    });
+                }
+
+                #endregion
+
+                _logger.LogInformation("[Queue] {Username} - Account Scrobbles: {AccountScrobbles}. Loaded Scrobbles: {LoadedScrobbles}", item.Username, LastFMUser.User.Playcount, AllScrobbles.Count());
+
+                #region Create Holding Objects
+
+                List<Scrobble> ProcessedScrobbles = new List<Scrobble>();
+                List<Scrobble> UncachedScrobbles = new List<Scrobble>();
+                List<Scrobble> UnfoundScrobbles = new List<Scrobble>();
+                List<Scrobble> FoundScrobbles = new List<Scrobble>();
+
+                #endregion
+
+
+                #region Last.FM Duration Search 
+
+                await UpdateStatus(item, $"Searching on Last.FM for minutes..");
+                _logger.LogInformation("[Queue] Beginning search on Last.FM for duration values..");
+
+                int TotalTopPages = await _lastfm.GetTopPagesTotal(item.Username);
+                var TopTasks = new List<Task<List<Scrobble>>>();
+                for (int i = 1; i <= TotalTopPages; i++)
+                {
+                    var task = _lastfm.GetScrobbles(item.Username, i);
+                    TopTasks.Add(task);
+                }
+
+                await Task.WhenAll(TopTasks);
+                foreach (var task in TopTasks)
+                {
+                    List<Scrobble> result = await task;
+                    foreach (Scrobble scrob in result)
+                    {
+                        if (scrob.Runtime != 0)
+                        { 
+                            FoundScrobbles.Add(scrob);
+                        } 
+
+                    }
+                }
+
+                foreach (Scrobble Ascrob in AccumulatedScrobbles)
+                {
+
+                    Scrobble FoundScrob = FoundScrobbles.Where(x => x.TrackName ==  Ascrob.TrackName && x.ArtistName == Ascrob.ArtistName).FirstOrDefault()!;
+                    if (FoundScrob != null)
+                    {
+                        Ascrob.Runtime = FoundScrob.Runtime;
+                        Ascrob.TotalRuntime = FoundScrob.Runtime * Ascrob.Count;
+                        ProcessedScrobbles.Add(Ascrob);
+                    } else
+                    {
+                        UnfoundScrobbles.Add(Ascrob);
                     }
 
                 }
-                else
+
+                _logger.LogInformation("[Queue] Search on Last.FM has completed.");
+
+                #endregion
+
+
+
+                #region Finding Cached Tracks
+
+
+                await UpdateStatus(item, $"Finding cached tracks...");
+                _logger.LogInformation("[Queue] Searching the cache for any unfound durations.");
+
+                List<Tracks> AllCached = await _lmdata.Tracks.ToListAsync();
+
+
+                foreach (Scrobble SearchFor in UnfoundScrobbles)
                 {
-                    //Console.WriteLine("[Queue] Queue is currently empty.");
+                    Tracks found = AllCached.FirstOrDefault(x =>
+                                                                string.Equals(x.Name, SearchFor.TrackName, StringComparison.OrdinalIgnoreCase) &&
+                                                                string.Equals(x.Artist, SearchFor.ArtistName, StringComparison.OrdinalIgnoreCase))!;
+
+                    if (found != null)
+                    {
+                        ProcessedScrobbles.Add(new Scrobble()
+                        {
+                            TrackName = SearchFor.TrackName,
+                            ArtistName = SearchFor.ArtistName,
+                            Count = SearchFor.Count,
+                            Runtime = found.Runtime,
+                            TotalRuntime = found.Runtime * SearchFor.Count
+                        });
+                    }
+                    else
+                    {
+                        UncachedScrobbles.Add(new Scrobble()
+                        {
+                            TrackName = SearchFor.TrackName,
+                            ArtistName = SearchFor.ArtistName,
+                            Count = SearchFor.Count
+                        });
+                    }
                 }
+
+                _logger.LogInformation("[Queue] Cache search completed. Found {FoundCache} tracks. There are {Unfound} tracks that need to be searched!", ProcessedScrobbles.Count, UncachedScrobbles.Count);
+
+                #endregion
+
+
+                            
+                #region Last.FM- Deprecated
+                // I'm sure this code was implemented before I found out that Last.FM provides track runtime data with ONLY the top tracks endpoint.
+                            
+                /*
+                await UpdateStatus(item, $"Searching minutes on Last.FM for {UncachedScrobbles.Count} tracks.");
+
+                // Try get scrobble runtime from Last.FM
+
+                var ScrobbleTasks = new List<Task<Scrobble>>();
+                foreach (Scrobble sgd in UncachedScrobbles)
+                {
+                    var task = _lastfm.GetScrobbleLength(sgd);
+                    ScrobbleTasks.Add(task);
+                }
+
+                await Task.WhenAll(ScrobbleTasks);
+
+                foreach (var task in ScrobbleTasks)
+                {
+                    Scrobble result = await task;
+                    if (result.Runtime != 0)
+                    {
+                        ProcessedScrobbles.Add(result);
+                        UncachedScrobbles.Remove(result);
+                    }
+                }
+
+                Console.WriteLine($"[Queue] Last.FM search complete. Remaining uncached scrobbles: {UncachedScrobbles.Count}");
+
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                */
+
+                #endregion
+
+                          
+                
+                #region Deezer
+
+                await UpdateStatus(item, $"Searching minutes on Deezer for {UncachedScrobbles.Count} tracks.");
+                _logger.LogInformation("[Queue] Beginning search on Deezer for duration values..");
+
+                var DeezerTasks = new List<Task<Scrobble>>();
+                foreach (Scrobble sgd in UncachedScrobbles)
+                {
+                    var task = _deezer.GetScrobbleData(sgd);
+                    DeezerTasks.Add(task);
+                }
+
+                await Task.WhenAll(DeezerTasks);
+                int SetCountTracks = UncachedScrobbles.Count;
+                foreach (var task in DeezerTasks)
+                {
+                    Scrobble result = await task;
+                    if (result.Runtime != 0)
+                    {
+                        ProcessedScrobbles.Add(result);
+                        UncachedScrobbles.Remove(result);
+                    }
+                }
+
+                _logger.LogInformation("[Queue] Search on Deezer has completed. Remaining uncached tracks: {Remaining}", UncachedScrobbles.Count());
+
+                #endregion
+
+
+
+                #region Spotify
+
+                // Get the auth token
+                string SpotifyAuthToken = await _spotify.GetAccessToken();
+                int count = 0;
+                bool SpotifySearchEnabled = true;
+                while (SpotifyAuthToken == "tokenfailure" && count <= 4)
+                {
+                    count++;
+                    _logger.LogWarning("[Queue] Failed to retrieve an auth token from Spotify. Retrying {CurrentAttempt}/{MaxTries}", count, 4);
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                    SpotifyAuthToken = await _spotify.GetAccessToken();
+                }
+                
+                if (SpotifyAuthToken == "tokenfailure")
+                {
+                    SpotifySearchEnabled = false;
+                     _logger.LogError("[Queue] Failed to retrieve an auth token from Spotify after 5 attempts. Aborting Spotify search.");
+                    await UpdateStatus(item, "Failed to retrieve an auth token from Spotify. Aborting Spotify search.");
+                }
+
+
+                // Begin Spotify search
+                if (SpotifySearchEnabled)
+                {
+                    await UpdateStatus(item, $"Searching minutes on Spotify for {UncachedScrobbles.Count} tracks.");
+                    _logger.LogInformation("[Queue] Beginning search on Spotify for duration values..");
+
+                    var SpotifyTasks = new List<Task<Scrobble>>();
+                    foreach (Scrobble sgd in UncachedScrobbles)
+                    {
+                        var task = _spotify.GetScrobbleData(sgd, SpotifyAuthToken);
+                        SpotifyTasks.Add(task);
+                    }
+
+                    await Task.WhenAll(SpotifyTasks);
+
+                    foreach (var task in SpotifyTasks)
+                    {
+                        Scrobble result = await task;
+                        if (result.Runtime != 0)
+                        {
+                            ProcessedScrobbles.Add(result);
+                            UncachedScrobbles.Remove(result);
+                        }
+                    }
+
+                    _logger.LogInformation("[Queue] Search on Spotify has completed. Remaining uncached tracks: {Remaining}", UncachedScrobbles.Count());
+                }
+                
+
+                #endregion
+
+
+
+                _logger.LogInformation("[Queue] Total processed tracks: {ProcessedTracks}", ProcessedScrobbles.Count);  
+                await UpdateStatus(item, $"Searching complete. Could not find minutes for {UncachedScrobbles.Count} tracks.");
+
+                long TotalRuntime = 0;
+
+                // Calculate total runtime
+                foreach (Scrobble ctr in ProcessedScrobbles)
+                {
+                    TotalRuntime += ctr.TotalRuntime;
+                }
+
+                _logger.LogInformation("[Queue] Total Calculated Minutes: {TotalMinutes} minutes ({TotalMs})", _spotify.ConvertMsToMinutes(TotalRuntime), TotalRuntime);
+
+                List<Scrobble> TopScrobbles = ProcessedScrobbles
+                    .OrderByDescending(kvp => kvp.TotalRuntime)
+                    .Take(25)
+                    .ToList();
+
+                List<Scrobble> BadScrobbles = UncachedScrobbles
+                    .Where(kvp => kvp.Count >= 1)
+                    .OrderByDescending(kvp => kvp.Count)
+                    .Take(100)
+                    .ToList();
+
+                Models.LMData.Results Result = new Models.LMData.Results()
+                {
+                    Username = item.Username,
+                    TotalPlaytime = TotalRuntime,
+                    AllScrobbles = JsonConvert.SerializeObject(TopScrobbles),
+                    BadScrobbles = JsonConvert.SerializeObject(BadScrobbles),
+                    Created_On = DateTime.Now,
+                    TimeFrame = TimeFrame
+                };
+
+                if (from != string.Empty && to != string.Empty)
+                {
+                    Result.FromWhen = DateTimeOffset.FromUnixTimeSeconds(int.Parse(from)).DateTime;
+                    Result.ToWhen = DateTimeOffset.FromUnixTimeSeconds(int.Parse(to)).DateTime;
+                }
+
+                await RemoveResults(item.Username);
+
+                _lmdata.Results.Add(Result);
+
+                if (await _lmdata.SaveChangesAsync() > 0)
+                {
+                    await UpdateStats(Result.TotalPlaytime);
+                }
+
+                await SubmitToLeaderboard(item, ConvertMsToMinutesLong(TotalRuntime));
+
+                await ClearFromQueue(item);
+
+                
+
+                return true;
+                
 
             }
         }
 
 
+        /// <summary>
+        /// Clears entries older than 24 hours from the Results table.
+        /// </summary>
+        /// <param name="Hours">Optional parameter to select how old entries need to be prior to removal.</param>
+        /// <returns>Bool</returns>
         private async Task<bool> ClearOldResults(int Hours = 24)
         {
             try
@@ -499,6 +539,12 @@ namespace LastMinutes.Services
 
         }
 
+
+        /// <summary>
+        /// Clears entries older than 72 days from the Leaderboard table.
+        /// </summary>
+        /// <param name="Days">Optional parameter to select how old entries need to be prior to removal.</param>
+        /// <returns>Bool</returns>
         private async Task<bool> ClearOldLeaderboardEntries(int Days = 72)
         {
             try
@@ -528,7 +574,12 @@ namespace LastMinutes.Services
 
 
 
-
+        /// <summary>
+        /// Updates the 'Status' property of the current work item in the queue.
+        /// </summary>
+        /// <param name="item">The current queue work item, LMData.Queue type.</param>
+        /// <param name="Status">String value to assign as the current status step.</param>
+        /// <returns>Bool</returns>
         private async Task<bool> UpdateStatus(Models.LMData.Queue item, string Status)
         {
             if (item == null) { return false; }
@@ -548,7 +599,12 @@ namespace LastMinutes.Services
             }
         }
 
-
+        /// <summary>
+        /// Creates a new leaderboard entry for the user if they have more minutes than their current leaderboard entry.
+        /// </summary>
+        /// <param name="item">The current queue work item, LMData.Queue type.</param>
+        /// <param name="totalMinutes">Long value for the total minutes processed for the queue work item.</param>
+        /// <returns>Bool</returns>
         private async Task<bool> SubmitToLeaderboard(Models.LMData.Queue item, long totalMinutes)
         {
             if (item.submitToLeaderboard == false) { return false; }
@@ -590,7 +646,11 @@ namespace LastMinutes.Services
             }
         }
 
-
+        /// <summary>
+        /// Clears the current work item from the queue.
+        /// </summary>
+        /// <param name="item">The current queue work item, LMData.Queue type.</param>
+        /// <returns>Bool</returns>
         private async Task<bool> ClearFromQueue(Models.LMData.Queue item)
         {
             if (item == null) { return false; }
@@ -612,11 +672,17 @@ namespace LastMinutes.Services
             }
         }
 
+
+        /// <summary>
+        /// Removes any existing results from the table for the current username.
+        /// </summary>
+        /// <param name="Username">String value of the current work item's LastFM Username.</param>
+        /// <returns>Bool</returns>
         private async Task<bool> RemoveResults(string Username)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
-                IQueueManager _queue = scope.ServiceProvider.GetService<IQueueManager>();
+                IQueueManager _queue = scope.ServiceProvider.GetRequiredService<IQueueManager>();
 
                 if (await _queue.RemoveResults(Username))
                 {
@@ -629,12 +695,20 @@ namespace LastMinutes.Services
             }
         }
 
+
+
         private long ConvertMsToMinutesLong(long msIn)
         {
             return msIn / 60000;
         }
 
 
+
+        /// <summary>
+        /// Updates the statistics table when the current work item has been processed.
+        /// </summary>
+        /// <param name="totalMinutes">Long value representing the amount of minutes tallied by the current work item.</param>
+        /// <returns>Bool</returns>
         private async Task<bool> UpdateStats(long totalMinutes)
         {
             try
