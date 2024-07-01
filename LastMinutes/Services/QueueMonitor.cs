@@ -42,6 +42,7 @@ namespace LastMinutes.Services
                     await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
                     await CheckDatabase();
                     await ClearOldResults();
+                    await ClearOldLeaderboardEntries();
                 } catch (Exception e)
                 {
                     Console.WriteLine("");
@@ -498,6 +499,35 @@ namespace LastMinutes.Services
 
         }
 
+        private async Task<bool> ClearOldLeaderboardEntries(int Days = 72)
+        {
+            try
+            {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
+
+                    var TimeAgo = DateTime.Now.AddDays(Days * -1);
+                    var RemoveResults = await _lmdata.Leaderboard.Where(x => x.Created_On < TimeAgo).ToListAsync();
+
+                    _lmdata.Leaderboard.RemoveRange(RemoveResults);
+                    if (await _lmdata.SaveChangesAsync() > 0)
+                    {
+                        return true;
+                    } else
+                    {
+                        return false;
+                    }
+
+                }
+            } catch
+            {
+                return false;
+            }
+        }
+
+
+
 
         private async Task<bool> UpdateStatus(Models.LMData.Queue item, string Status)
         {
@@ -529,7 +559,16 @@ namespace LastMinutes.Services
                 
                 var FoundExistingLeaderboard = await _lmdata.Leaderboard.FirstOrDefaultAsync(x => x.Username == item.Username);
                 if (FoundExistingLeaderboard != null)
-                    _lmdata.Remove(FoundExistingLeaderboard);
+                {
+                    if (FoundExistingLeaderboard.TotalMinutes < totalMinutes)
+                    {
+                        _lmdata.Leaderboard.Remove(FoundExistingLeaderboard);
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
 
                 var newLeaderboardEntry = new Leaderboard()
                 {

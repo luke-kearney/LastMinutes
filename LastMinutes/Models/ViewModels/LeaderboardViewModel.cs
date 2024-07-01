@@ -9,6 +9,8 @@ namespace LastMinutes.Models.ViewModels
 
         public long TotalMinutes { get; set; }
 
+        public bool verbose { get; set; } = false;
+
 
     }
 

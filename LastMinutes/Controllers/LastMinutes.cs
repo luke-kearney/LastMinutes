@@ -120,12 +120,13 @@ namespace LastMinutes.Controllers
 
 
         [Route("/leaderboard")]
-        public async Task<IActionResult> Leaderboard()
+        public async Task<IActionResult> Leaderboard(bool verbose = false)
         {
             List<Leaderboard> LeaderboardEntries = await _lmdata.Leaderboard.ToListAsync();
             LeaderboardViewModel vm = new LeaderboardViewModel()
             {
-                leaderboardEntries = LeaderboardEntries
+                leaderboardEntries = LeaderboardEntries,
+                verbose = verbose
             };
             try
             {

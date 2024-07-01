@@ -119,6 +119,39 @@ namespace LastMinutes.Controllers
 
 
         [HttpGet]
+        [Route("leaderboard/remove")]
+        public async Task<IActionResult> RemoveLeaderboardEntry(
+            [FromQuery(Name = "entryId")] string entryId,
+            [FromQuery(Name = "apiKey")] string apiKey)
+        {
+            if (string.IsNullOrEmpty(entryId) || string.IsNullOrEmpty(apiKey)) { return BadRequest(); }
+
+            if (!CheckApiKey(apiKey))
+            {
+                return StatusCode(401, "Unauthorized: Missing or invalid authentication credentials.");
+            }
+
+            var foundEntry = await _lmdata.Leaderboard.FirstOrDefaultAsync(x => x.Id.ToString() == entryId);
+
+            if (foundEntry != null)
+            {
+                _lmdata.Leaderboard.Remove(foundEntry);
+                if (await _lmdata.SaveChangesAsync() > 0)
+                {
+                    return Ok();
+                } else
+                {
+                    return Content("Something went wrong while trying to remove entry.");
+                }
+            }
+
+            return Content("Entry not found.");
+           
+
+        }
+
+
+        [HttpGet]
         [Route("commands/list")]
         public IActionResult CommandsList()
         {
@@ -127,6 +160,8 @@ namespace LastMinutes.Controllers
             output += "api/cache/getTotalTracks - Returns the total amount of tracks in the cache. <br>";
             output += "api/cache/addTrackToCache?artist={}&trackName={}&runtimeMs={}&apiKey={} - Adds a track to the cache manually. Requires special query parameters. <br>";
             output += "api/results/getAll - Returns all currently saved results. <br>";
+            output += "api/leaderboard/remove?entryId{}&apiKey={} - Removes a leaderboard entry. Requires special query parameters. <br>";
+            output += "<br><br>All leading with '/LastMinutes/api/xx'.";
 
             return Content( output, "text/html");
         }

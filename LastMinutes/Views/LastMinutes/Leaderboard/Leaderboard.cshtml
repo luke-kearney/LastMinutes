@@ -30,11 +30,21 @@
                     {
                         <span>
                             <b>@counter.ToString()</b>: <b><i>@leaderboard.Username</i></b> (@leaderboard.TotalMinutes.ToString("N0") minutes)
+                            @if (Model.verbose)
+                            {
+                                <br />
+                                <i class="text-muted">(entry ID: @leaderboard.Id.ToString())</i>
+                            }
                         </span>
                     } else
                     {
                         <span>
-                            <b>@counter.ToString()</b>: <i>@leaderboard.Username</i> (@leaderboard.TotalMinutes.ToString("N0") minutes)
+                            <b>@counter.ToString()</b>: <a href="https://www.last.fm/user/@leaderboard.Username" target="_new" style="color: white;"><i>@leaderboard.Username</i></a> (@leaderboard.TotalMinutes.ToString("N0") minutes)
+                            @if (Model.verbose)
+                            {
+                                <br />
+                                <i class="text-muted">(entry ID: @leaderboard.Id.ToString())</i>
+                            }
                         </span>
                     }
 

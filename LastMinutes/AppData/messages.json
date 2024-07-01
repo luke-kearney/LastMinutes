@@ -1,7 +1,7 @@
 {
   "PendingShowMessage": true,
-  "PendingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">New version released</a>.<br>'Special Accounts' have been removed.<br> You can now use all time frames!",
+  "PendingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">New version released</a>.<br>A leaderboard has been added!<br> See how your results compare.",
 
   "LandingShowMessage": true,
-  "LandingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">New version released</a>.<br>'Special Accounts' have been removed.<br> You can now use all time frames!"
+  "LandingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">New version released</a>.<br>A leaderboard has been added!<br> See how your results compare."
 }
