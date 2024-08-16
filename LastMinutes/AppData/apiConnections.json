@@ -1,0 +1,16 @@
+{
+  "LastFMApiUrl": "http://ws.audioscrobbler.com/2.0/",
+  "LastFMApiKey": "",
+
+  "SpotifyApiUrl": "https://api.spotify.com/v1",
+  "SpotifyAccUrl": "https://accounts.spotify.com/api/token",
+  "SpotifyClientId": "",
+  "SpotifyClientSecret": "",
+
+  "MusicBrainzApiUrl": "https://musicbrainz.org/ws/2",
+  "MusicBrainzUserAgent": "LastMinutes/1.0.0 ( luke@lektech.co.za )",
+
+  "DeezerApiUrl": "https://api.deezer.com",
+
+  "LastMinutesApiKey": "secret"
+}

@@ -1,0 +1,4 @@
+{
+  "DB_Connection": "Server=JNB3061D; Database=lastminutes;Integrated Security=True;TrustServerCertificate=True",
+  "DB_Type": "SQL"
+}	
