@@ -15,6 +15,13 @@ namespace LastMinutes.Services
         public Task<bool> IsFinished(string username);
         public Task<bool> RemoveResults(string username);
 
+        /// <summary>
+        /// Clears the entire queue.
+        /// </summary>
+        /// <returns>Boolean on success or failure.</returns>
+        Task<bool> ClearQueueAsync();
+        
+        
         public int GetLength();
 
         public Task<List<Models.LMData.Results>> GetAllResults();
@@ -170,6 +177,23 @@ namespace LastMinutes.Services
 
         }
 
+        /// <summary>
+        /// Clears the entire queue.
+        /// </summary>
+        /// <returns>Boolean on success or failure.</returns>
+        public async Task<bool> ClearQueueAsync()
+        {
+            var removeAll = await _lmdata.Queue.ToListAsync();
+            _lmdata.Queue.RemoveRange(removeAll);
+            if (await _lmdata.SaveChangesAsync() > 0)
+            {
+                return true;
+            } else
+            {
+                return false;
+            }
+        }
+        
         public async Task<string> GetQueueItemStatus(string username)
         {
             if (string.IsNullOrEmpty(username)) { return "Error"; }

@@ -94,6 +94,29 @@ namespace LastMinutes.Controllers
             return Content($"Total queue length: {queueLength}");
         }
 
+
+
+        [HttpGet]
+        [Route("queue/clear")]
+        public IActionResult ClearQueue([FromQuery(Name = "apiKey")] string apiKey)
+        {
+            if (string.IsNullOrEmpty(apiKey)) { return BadRequest(); }
+            if (!CheckApiKey(apiKey)){
+                return StatusCode(401, "Unauthorized: Missing or invalid authentication credentials.");
+            }
+            
+            var result = _queue.ClearQueueAsync();
+            if (result.Result)
+            {
+                return Content("queue WAS CLEARED");
+            } else
+            {
+                return Content("failed");
+            }
+        }
+        
+        
+        
         [HttpGet]
         [Route("cache/getTotalTracks")]
         public async Task<IActionResult> GetCacheTotalTracks()
