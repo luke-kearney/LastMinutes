@@ -1,11 +1,11 @@
 {
   "LastFMApiUrl": "http://ws.audioscrobbler.com/2.0/",
-  "LastFMApiKey": "",
+  "LastFMApiKey": "test",
 
   "SpotifyApiUrl": "https://api.spotify.com/v1",
   "SpotifyAccUrl": "https://accounts.spotify.com/api/token",
-  "SpotifyClientId": "",
-  "SpotifyClientSecret": "",
+  "SpotifyClientId": "test",
+  "SpotifyClientSecret": "test",
 
   "MusicBrainzApiUrl": "https://musicbrainz.org/ws/2",
   "MusicBrainzUserAgent": "LastMinutes/1.0.0 ( luke@lektech.co.za )",

@@ -383,6 +383,8 @@ namespace LastMinutes.Controllers
         [Route("/go/checkminutes")]
         public async Task<IActionResult> CheckMinutes(LandingPageViewModel vm)
         {
+            return Content("Something is broken, and the application is currently disabled.");
+            
             string Username = vm.username;
             if (string.IsNullOrEmpty(Username)) { return Content("No Username Supplied!"); }
 
