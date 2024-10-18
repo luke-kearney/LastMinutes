@@ -57,7 +57,7 @@ namespace LastMinutes.Services
 
                 if (await _lmdata.SaveChangesAsync() > 0)
                 {
-                    _logger.LogInformation("[Cache] Track {TrackName} by {ArtistName} was added to the cache with a runtime of {Runtime}ms", track.Name, track.Artist, track.Runtime);
+                    _logger.LogDebug("[Cache] Track {TrackName} by {ArtistName} was added to the cache with a runtime of {Runtime}ms", track.Name, track.Artist, track.Runtime);
                     return true;
                 }
                 else

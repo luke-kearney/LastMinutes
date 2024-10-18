@@ -7,6 +7,7 @@ using LastMinutes.ActionFilters;
 
 using Serilog;
 using Serilog.Events;
+using Serilog.Sinks.MSSqlServer;
 using Serilog.Sinks.SystemConsole;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,7 +59,7 @@ if (!ConfigPass)
  *  -tag = Used if multiple releases are made per day (example: -a, -b, -test)
  */
 
-string AppVersion = "11018";
+string AppVersion = "11018-a";
 string AppStage = "Beta";
 
 configuration.AddInMemoryCollection(new Dictionary<string, string>
@@ -124,6 +125,13 @@ builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
+    .WriteTo.MSSqlServer(
+        connectionString: DB_Connection,
+        sinkOptions: new MSSqlServerSinkOptions()
+        {
+            TableName = "Serilog",
+            AutoCreateSqlTable = true
+        })
     .CreateLogger();
 
 builder.Host.UseSerilog();

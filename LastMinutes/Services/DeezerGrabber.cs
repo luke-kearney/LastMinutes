@@ -144,7 +144,7 @@ namespace LastMinutes.Services
                             };
 
                             if (await _cache.AddTrackToCache(CacheTrack))
-                                _logger.LogInformation("[Deezer] Track {TrackName} by {ArtistName} was added to the cache with a runtime of {Runtime}ms", trackName, artistName, durationMsResult);
+                                _logger.LogDebug("[Deezer] Track {TrackName} by {ArtistName} was added to the cache with a runtime of {Runtime}ms", trackName, artistName, durationMsResult);
                                 
 
                             return (trackNameResult, artistNameResult, durationMsResult);
