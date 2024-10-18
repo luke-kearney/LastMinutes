@@ -74,11 +74,10 @@ namespace LastMinutes.Controllers
         [Route("faq")]
         public async Task<IActionResult> Faq()
         {
-            List<Tracks> AllCached = await _lmdata.Tracks.ToListAsync();
-            int TotalCached = AllCached.Count;
+            var cachedCount = await _lmdata.Tracks.CountAsync();
             FaqViewModel vm = new FaqViewModel()
             {
-                TotalCachedTracks = TotalCached,
+                TotalCachedTracks = cachedCount,
             };
             
             return View("FaqPage", vm);

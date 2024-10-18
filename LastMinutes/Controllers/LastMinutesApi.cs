@@ -97,9 +97,13 @@ namespace LastMinutes.Controllers
 
 
         [HttpGet]
-        [Route("queue/clear1")]
-        public IActionResult ClearQueue()
+        [Route("queue/clear")]
+        public IActionResult ClearQueue([FromQuery(Name = "apiKey")] string apiKey) 
         {
+            if (!CheckApiKey(apiKey)){
+                return StatusCode(401, "Unauthorized: Missing or invalid authentication credentials.");
+            }
+            
             var result = _queue.ClearQueueAsync();
             if (result.Result)
             {

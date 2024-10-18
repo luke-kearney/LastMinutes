@@ -125,13 +125,13 @@ builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
-    .WriteTo.MSSqlServer(
-        connectionString: DB_Connection,
-        sinkOptions: new MSSqlServerSinkOptions()
-        {
-            TableName = "Serilog",
-            AutoCreateSqlTable = true
-        })
+    //.WriteTo.MSSqlServer(
+    //    connectionString: DB_Connection,
+    //    sinkOptions: new MSSqlServerSinkOptions()
+     //   {
+    //        TableName = "Serilog",
+    //        AutoCreateSqlTable = true
+   //     })
     .CreateLogger();
 
 builder.Host.UseSerilog();
