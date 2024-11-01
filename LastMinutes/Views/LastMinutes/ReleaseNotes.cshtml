@@ -22,6 +22,18 @@
     <div class="p-2 px-1 text-white">
 
         <div class="row my-4">
+            <h5>Beta11101</h5>
+            <p>LastMinutes stopped working again, however this time I was able to figure out what the issue was. The queue would continuously attempt to process a username which does not exist on Last.FM.</p>
+            <span>
+                <ul>
+                    <li>Added extra properties to the Queue entity to track how many attempts the queue item has had at processing and whether it has failed.</li>
+                    <li>Queue items which have failed two times will be removed from the queue.</li>
+                    <li>TODO: Add feedback to the user upon username submission to inform them that the user account does not exist.</li>
+                </ul>
+            </span>
+        </div>
+
+        <div class="row my-4">
             <h5>Beta11018-a</h5>
             <p>I noticed that LastMinutes was not working for potentially, quite a while, I'm not exactly sure what caused the issue but it has been resolved.</p>
             <span>

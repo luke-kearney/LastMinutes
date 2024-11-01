@@ -74,23 +74,34 @@ namespace LastMinutes.Services
         {
             using (var scope = _serviceProvider.CreateScope())
             {
-                LMData _lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
+                LMData lmdata = scope.ServiceProvider.GetRequiredService<LMData>();
 
-                int QueueLength = _lmdata.Queue.Count();
+                int queueLength = lmdata.Queue.Count(x => !x.Failed);
 
-                if (QueueLength == 0)
+                if (queueLength == 0)
                 {
                     _logger.LogInformation("[Queue] Current queue size is 0.");
                     return false;
                 }
-
                 
-                _logger.LogInformation("[Queue] Current queue size is {QueueLength}, beginning processing.", QueueLength.ToString());
-                Models.LMData.Queue? item = _lmdata.Queue.FirstOrDefault();
+                Models.LMData.Queue? item = lmdata.Queue.FirstOrDefault(x => !x.Failed);
 
                 if (item == null)
                     return false;
-                   
+                
+                
+                _logger.LogInformation("[Queue] Current queue size is {QueueLength}, beginning processing with user {Username}", queueLength.ToString(), item.Username);
+                
+                
+                if (item.Retries > 2)
+                {
+                    _logger.LogWarning("Queue item for user {Username} has been set to failed after too many retries!", item.Username);
+                    item.Failed = true;
+                    lmdata.Queue.Update(item);
+                    await lmdata.SaveChangesAsync();
+                    return false;
+                }
+                
 
                 #region Get Mode Strings
 
@@ -150,14 +161,25 @@ namespace LastMinutes.Services
                 await UpdateStatus(item, "Beginning processing...");
 
                 // Populate 
-                List<Dictionary<string, string>> AllScrobbles = new List<Dictionary<string, string>>();
+                List<Dictionary<string, string>> allScrobbles = new List<Dictionary<string, string>>();
 
-                LastFMUserData LastFMUser = await _lastfm.GetUserData(item.Username);
-                int TotalLastFmPages = await _lastfm.GetTotalPages(item.Username, to, from);
-                int MaxRequests = 25;
+                var fetchLastFmUser = await _lastfm.GetUserData(item.Username);
+
+                if (!fetchLastFmUser.Success)
+                {
+                    // If error occurs then add to retries before removing from queue.
+                    _logger.LogWarning("Queue item for user {Username} has failed to retrieve Last.FM user data. Retrying...", item.Username);
+                    item.Retries++;
+                    lmdata.Queue.Update(item);
+                    await lmdata.SaveChangesAsync();
+                    return false;
+                }
+                
+                int totalLastFmPages = await _lastfm.GetTotalPages(item.Username, to, from);
+                int maxRequests = 25;
 
 
-                if (LastFMUser == null)
+                if (fetchLastFmUser.User == null)
                 {
                     await ClearFromQueue(item);
                     return false;
@@ -168,11 +190,11 @@ namespace LastMinutes.Services
                             
                 var tasks = new List<Task<List<Dictionary<string, string>>>>();
 
-                for (int page = 1; page <= TotalLastFmPages; page++)
+                for (int page = 1; page <= totalLastFmPages; page++)
                 {
                     tasks.Add(_lastfm.FetchScrobblesPerPage(item.Username, page, to, from));
                     // Limit the amount of concurrent requests.
-                    if (tasks.Count >= MaxRequests || page == TotalLastFmPages)
+                    if (tasks.Count >= maxRequests || page == totalLastFmPages)
                     {
                         // Await all tasks if we reached the maximum or if it's the last page.
                         var batchResults = await Task.WhenAll(tasks);
@@ -180,14 +202,14 @@ namespace LastMinutes.Services
                         // Combine results from all tasks in htis batch
                         foreach (var result in batchResults)
                         {
-                            AllScrobbles.AddRange(result);
+                            allScrobbles.AddRange(result);
                             if (result.Count == 0)
                             {
                                 _logger.LogWarning("[Queue] There was a request error to Last.FM. Some scrobbles may be missing!");
                             }
                         }
-                        _logger.LogInformation("[Queue] Loaded Last.FM pages {Step}/{TotalPages}", page.ToString(), TotalLastFmPages.ToString());
-                        await UpdateStatus(item, $"Found Last.FM page {page}/{TotalLastFmPages}");
+                        _logger.LogInformation("[Queue] Loaded Last.FM pages {Step}/{TotalPages}", page.ToString(), totalLastFmPages.ToString());
+                        await UpdateStatus(item, $"Found Last.FM page {page}/{totalLastFmPages}");
 
                         tasks.Clear();
 
@@ -195,7 +217,7 @@ namespace LastMinutes.Services
                 }
 
                 // Create dictionary for scrobbles with their total count 
-                Dictionary<(string trackName, string artistName), int> ScrobblesAccumulatedPlays = _lastfm.AccumulateTrackPlays(AllScrobbles);
+                Dictionary<(string trackName, string artistName), int> ScrobblesAccumulatedPlays = _lastfm.AccumulateTrackPlays(allScrobbles);
                 int TotalTracks = ScrobblesAccumulatedPlays.Count();
 
                 List<Scrobble> AccumulatedScrobbles = new List<Scrobble>();
@@ -211,7 +233,7 @@ namespace LastMinutes.Services
 
                 #endregion
 
-                _logger.LogInformation("[Queue] {Username} - Account Scrobbles: {AccountScrobbles}. Loaded Scrobbles: {LoadedScrobbles}", item.Username, LastFMUser.User.Playcount, AllScrobbles.Count());
+                _logger.LogInformation("[Queue] {Username} - Account Scrobbles: {AccountScrobbles}. Loaded Scrobbles: {LoadedScrobbles}", item.Username, fetchLastFmUser.User.Playcount, allScrobbles.Count());
 
                 #region Create Holding Objects
 
@@ -278,7 +300,7 @@ namespace LastMinutes.Services
                 await UpdateStatus(item, $"Finding cached tracks...");
                 _logger.LogInformation("[Queue] Searching the cache for any unfound durations.");
 
-                List<Tracks> AllCached = await _lmdata.Tracks.ToListAsync();
+                List<Tracks> AllCached = await lmdata.Tracks.ToListAsync();
 
 
                 foreach (Scrobble SearchFor in UnfoundScrobbles)
@@ -478,9 +500,9 @@ namespace LastMinutes.Services
 
                 await RemoveResults(item.Username);
 
-                _lmdata.Results.Add(Result);
+                lmdata.Results.Add(Result);
 
-                if (await _lmdata.SaveChangesAsync() > 0)
+                if (await lmdata.SaveChangesAsync() > 0)
                 {
                     await UpdateStats(Result.TotalPlaytime);
                 }
@@ -607,7 +629,7 @@ namespace LastMinutes.Services
         /// <returns>Bool</returns>
         private async Task<bool> SubmitToLeaderboard(Models.LMData.Queue item, long totalMinutes)
         {
-            if (item.submitToLeaderboard == false) { return false; }
+            if (item.SubmitToLeaderboard == false) { return false; }
 
             using (var scope = _serviceProvider.CreateScope())
             {

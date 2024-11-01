@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LastMinutes.Models.LMData
 {
@@ -8,21 +9,29 @@ namespace LastMinutes.Models.LMData
 
         public int Id { get; set; }
 
+        [MaxLength(1024)]
         public string Username { get; set; } = string.Empty;
         
-        public DateTime Created_On { get; set; }
-        public DateTime Updated_On { get; set; }
+        public DateTime CreatedOn { get; set; }
+        public DateTime UpdatedOn { get; set; }
 
         public int Mode { get; set; }
 
-        public bool submitToLeaderboard { get; set; } = false;
+        public bool SubmitToLeaderboard { get; set; } = false;
 
+        [MaxLength(512)]
         public string Status { get; set; } = string.Empty;
+        
+        public int Retries { get; set; }
+        public bool Failed { get; set; }
 
-        public Queue()
+        public Queue(string username)
         {
-            Created_On = DateTime.Now;
-            Updated_On = DateTime.Now;
+            CreatedOn = DateTime.Now;
+            UpdatedOn = DateTime.Now;
+            Username = username;
+            Retries = 0;
+            Failed = false;
         }
     }
 }

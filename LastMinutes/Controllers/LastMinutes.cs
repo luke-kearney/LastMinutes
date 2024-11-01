@@ -382,14 +382,14 @@ namespace LastMinutes.Controllers
         [Route("/go/checkminutes")]
         public async Task<IActionResult> CheckMinutes(LandingPageViewModel vm)
         {
-            string Username = vm.username;
-            if (string.IsNullOrEmpty(Username)) { return Content("No Username Supplied!"); }
+            string username = vm.username;
+            if (string.IsNullOrEmpty(username)) { return Content("No Username Supplied!"); }
 
-            bool SubmitToLeaderboard = vm.leaderboardSwitchInput;
+            bool submitToLeaderboard = vm.leaderboardSwitchInput;
 
             // Get the mode required
-            string ModeIn = vm.Mode;
-            int Mode = 0;
+            string modeIn = vm.Mode;
+            int mode = 0;
             /*switch (ModeIn)
             {
                 case "1": Mode = 1; break; // Over All Time
@@ -403,42 +403,42 @@ namespace LastMinutes.Controllers
 
             try
             {
-                Mode = Int32.Parse(vm.Mode);
+                mode = Int32.Parse(vm.Mode);
             } catch {
-                Mode = 3;
+                mode = 3;
             }
 
 
-            bool IsInQueue = await _queue.InQueue(Username);
-            bool IsFinished = await _queue.IsFinished(Username);
+            bool isInQueue = await _queue.InQueue(username);
+            bool isFinished = await _queue.IsFinished(username);
 
-            if (IsFinished)
+            if (isFinished)
             {
-                return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = Username });
+                return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = username });
             }
 
             PendingViewModel spvm = new PendingViewModel()
             {
-                Username = Username,
+                Username = username,
                 Eta = _queue.GetEta(),
                 EtaWords = _queue.ConvertMinutesToWordsLong(_queue.GetEta()),
                 ServerStatus = _queue.Busy(),
             };
 
 
-            if (IsInQueue)
+            if (isInQueue)
             {
-                return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = Username }); 
+                return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = username }); 
             }
 
 
-            if (await _queue.AddUsernameToQueue(Username, Mode, SubmitToLeaderboard))
+            if (await _queue.AddUsernameToQueue(username, mode, submitToLeaderboard))
             {
                 CookieOptions option = new CookieOptions();
                 option.Expires = DateTime.Now.AddDays(31);
 
-                Response.Cookies.Append("Username", Username, option);
-                return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = Username });
+                Response.Cookies.Append("Username", username, option);
+                return RedirectToAction("ResultsIndex", "LastMinutes", new { Username = username });
             } 
             
             

@@ -1,7 +1,7 @@
 {
   "PendingShowMessage": true,
-  "PendingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">LastMinutes is back up and running!</a>",
+  "PendingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">LastMinutes is working again!</a>",
 
   "LandingShowMessage": true,
-  "LandingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">LastMinutes is back up and running!</a>"
+  "LandingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">LastMinutes is working again!</a>"
 }

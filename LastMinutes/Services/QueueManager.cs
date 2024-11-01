@@ -64,44 +64,22 @@ namespace LastMinutes.Services
 
         public async Task<bool> AddUsernameToQueue(string username, int mode, bool submitToLeaderboard = false)
         {
-            if (username == null || username == string.Empty)
-            {
+            if (string.IsNullOrEmpty(username))
                 return false;
-            }
-
-            /*
-             // This code has been removed because it was used as a rate limiting feature and is no longer needed. 
-             
-            int[] PremiumModes = { 1, 4, 7 };
-
-            if (PremiumModes.Contains(mode))
-            { // user selected premium, check if they are special
-                if (!LastFmFriends.Contains(username.ToUpper()))
-                {
-                    mode = 3;
-                }
-            } 
-
-            */
-
+            
             if (mode == 0)
-            {
                 mode = 3;
-            }
-
+            
             if (mode != 3)
-            {
                 submitToLeaderboard = false;
-            }
-
-            LastMinutes.Models.LMData.Queue? CheckExists = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username);
-            if (CheckExists == null)
+            
+            var checkExists = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username && !x.Failed);
+            if (checkExists == null)
             {
-                LastMinutes.Models.LMData.Queue queue = new Models.LMData.Queue()
+                Queue queue = new Queue(username)
                 {
-                    Username = username,
                     Mode = mode,
-                    submitToLeaderboard = submitToLeaderboard,
+                    SubmitToLeaderboard = submitToLeaderboard,
                     Status = "Currently waiting in queue..."
                 };
 
@@ -130,7 +108,7 @@ namespace LastMinutes.Services
                 return false;
             }
 
-            Models.LMData.Queue? QueueItem = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username);
+            Models.LMData.Queue? QueueItem = await _lmdata.Queue.FirstOrDefaultAsync(x => x.Username == username && !x.Failed);
 
             if (QueueItem == null)
             {

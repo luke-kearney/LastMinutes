@@ -13,7 +13,7 @@ namespace LastMinutes.Services
     public interface ILastFMGrabber
     {
 
-        public Task<LastFMUserData> GetUserData(string username);
+        public Task<GetLastFmUserResponse> GetUserData(string username);
 
         public Task<int> GetTotalPages(string username, string to, string from);
 
@@ -55,22 +55,30 @@ namespace LastMinutes.Services
            // EnableCaching = config.GetValue<bool>("EnableCaching");
         }
 
-        public async Task<LastFMUserData> GetUserData(string username)
+        public async Task<GetLastFmUserResponse> GetUserData(string username)
         {
             string url = $"{LastFMApiUrl}?method=user.getinfo&user={username}&api_key={LastFMApiKey}&format=json";
 
             using (HttpClient client = new HttpClient())
             {
-
                 HttpResponseMessage response = await client.GetAsync(url);
                 if (response.IsSuccessStatusCode)
                 {
                     string responseBody = await response.Content.ReadAsStringAsync();
-                    LastFMUserData data = JsonConvert.DeserializeObject<LastFMUserData>(responseBody) ?? new LastFMUserData() { Success = false, ErrorMessage = "Unknown error occurred." };
-                    return data;
+                    var fetchUserData = JsonConvert.DeserializeObject<FetchLastFmUser>(responseBody);
+                    if (fetchUserData != null && fetchUserData.User != null)
+                    {
+                        return new GetLastFmUserResponse(true, fetchUserData.User);
+                    } else if (fetchUserData != null && fetchUserData.User == null)
+                    {
+                        return new GetLastFmUserResponse(false, errorMessage: "User was not found.", responseCode: 404);
+                    }
+                    return new GetLastFmUserResponse(false, errorMessage: "Unknown error occurred.", responseCode: Int32.Parse(response.StatusCode.ToString()));
                 } else
                 {
-                    return new LastFMUserData() { Success = false, ErrorMessage = $"Request error message: {response.StatusCode.ToString()}" };
+                    _logger.LogCritical("Failed to get user data for {Username} from LastFM API. Status code: {StatusCode}", username, response.StatusCode);
+                    return new GetLastFmUserResponse(false,
+                        errorMessage: $"Request error message: {response.StatusCode.ToString()}");
                 }
 
             }

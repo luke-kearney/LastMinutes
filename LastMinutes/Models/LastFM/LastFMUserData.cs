@@ -1,10 +1,26 @@
 ﻿namespace LastMinutes.Models.LastFM
 {
-    public class LastFMUserData
+    public class FetchLastFmUser
     {
-        public User User { get; set; }
-        public bool Success { get; set; } = true;
-        public string? ErrorMessage { get; set; }
+        public User? User { get; set; }
+    }
+    
+    
+    public class GetLastFmUserResponse
+    {
+        public User? User { get; set; }
+        public bool Success { get; set; }
+        
+        public int ResponseCode { get; set; }
+        public string ErrorMessage { get; set; }
+
+        public GetLastFmUserResponse(bool success, User? user = null, string errorMessage = "", int responseCode = 200)
+        {
+            Success = success;
+            User = user;
+            ErrorMessage = errorMessage;
+            ResponseCode = responseCode;
+        }
     }
 
     public class User
