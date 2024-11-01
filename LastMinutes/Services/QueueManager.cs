@@ -205,7 +205,7 @@ namespace LastMinutes.Services
 
         public int GetLength()
         {
-            return _lmdata.Queue.Count();
+            return _lmdata.Queue.Count(x => !x.Failed);
         }
 
         public string ConvertMinutesToWordsLong(int minutes)
