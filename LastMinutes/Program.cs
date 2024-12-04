@@ -59,7 +59,7 @@ if (!ConfigPass)
  *  -tag = Used if multiple releases are made per day (example: -a, -b, -test)
  */
 
-string AppVersion = "11101";
+string AppVersion = "11205";
 string AppStage = "Beta";
 
 configuration.AddInMemoryCollection(new Dictionary<string, string>
@@ -125,13 +125,13 @@ builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
-    //.WriteTo.MSSqlServer(
-    //    connectionString: DB_Connection,
-    //    sinkOptions: new MSSqlServerSinkOptions()
-     //   {
-    //        TableName = "Serilog",
-    //        AutoCreateSqlTable = true
-   //     })
+    // .WriteTo.MSSqlServer(
+    //     connectionString: DB_Connection,
+    //     sinkOptions: new MSSqlServerSinkOptions()
+    //     {
+    //         TableName = "Serilog",
+    //         AutoCreateSqlTable = true
+    //     })
     .CreateLogger();
 
 builder.Host.UseSerilog();

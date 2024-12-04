@@ -105,40 +105,51 @@ namespace LastMinutes.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    string responsebody = await response.Content.ReadAsStringAsync();
-                    XDocument doc = XDocument.Parse(responsebody);
-
                     List<Dictionary<string, string>> scrobblesPerPage = new List<Dictionary<string, string>>();
 
-                    foreach (var trackElement in doc.Root.Element("recenttracks").Elements("track"))
+                    try
                     {
-                        var nowPlayingAttribute = trackElement.Attribute("nowplaying");
-                        if (nowPlayingAttribute != null && nowPlayingAttribute.Value == "true")
+                        string responsebody = await response.Content.ReadAsStringAsync();
+                        XDocument doc = XDocument.Parse(responsebody);
+                        
+                        foreach (var trackElement in doc.Root.Element("recenttracks").Elements("track"))
                         {
-                            continue;
+                            var nowPlayingAttribute = trackElement.Attribute("nowplaying");
+                            if (nowPlayingAttribute != null && nowPlayingAttribute.Value == "true")
+                            {
+                                continue;
+                            }
+
+                            var nameElement = trackElement.Element("name");
+                            string name;
+
+                            if (nameElement != null)
+                            {
+                                //byte[] bytes = Encoding.GetEncoding("ISO-8859-1").GetBytes(nameElement.Value);
+                                //name = Encoding.UTF8.GetString(bytes);
+
+                                name = nameElement.Value;
+                            } else
+                            {
+                                name = string.Empty;
+                            }
+
+                            Dictionary<string, string> scrobbleDict = new Dictionary<string, string>();
+                            scrobbleDict.Add("artist", trackElement.Element("artist").Value ?? string.Empty);
+                            scrobbleDict.Add("name", name);
+                            scrobblesPerPage.Add(scrobbleDict);
                         }
 
-                        var nameElement = trackElement.Element("name");
-                        string name;
-
-                        if (nameElement != null)
-                        {
-                            //byte[] bytes = Encoding.GetEncoding("ISO-8859-1").GetBytes(nameElement.Value);
-                            //name = Encoding.UTF8.GetString(bytes);
-
-                            name = nameElement.Value;
-                        } else
-                        {
-                            name = string.Empty;
-                        }
-
-                        Dictionary<string, string> scrobbleDict = new Dictionary<string, string>();
-                        scrobbleDict.Add("artist", trackElement.Element("artist").Value ?? string.Empty);
-                        scrobbleDict.Add("name", name);
-                        scrobblesPerPage.Add(scrobbleDict);
+                        return scrobblesPerPage;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogCritical("Failed to parse XML response from LastFM API. Error: {Error}", ex.Message);
+                        return scrobblesPerPage;
                     }
 
-                    return scrobblesPerPage;
+
+                    
                 } else
                 {
                     _logger.LogError("[LastFM] {Username} - error occurred while pulling scrobbles, all retries failed..", username);

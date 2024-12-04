@@ -187,7 +187,7 @@ namespace LastMinutes.Controllers
                     EtaWords = _queue.ConvertMinutesToWordsLong(_queue.GetEta()),
                     ServerStatus = _queue.Busy(),
                     ShowMessage = _config.GetValue<bool>("PendingShowMessage"),
-                    Message = _config.GetValue<string>("PendingMessage")
+                    Message = _config.GetValue<string>("PendingMessage") ?? "Welcome to Last Minutes!"
                 };
                 return View("PendingPage", spvm);
             }
@@ -408,6 +408,14 @@ namespace LastMinutes.Controllers
                 mode = 3;
             }
 
+            var excludeModes = new List<int>() { 1, 4, 7 };
+            if (excludeModes.Contains(mode))
+            {
+                mode = 3;
+            }
+            
+
+            
 
             bool isInQueue = await _queue.InQueue(username);
             bool isFinished = await _queue.IsFinished(username);

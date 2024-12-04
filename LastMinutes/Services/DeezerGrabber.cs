@@ -30,7 +30,7 @@ namespace LastMinutes.Services
 
         private string DeezerApiUrl = string.Empty;
 
-        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(3);
+        private readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(2);
 
         public DeezerGrabber(
             IServiceProvider serviceProvider,
@@ -49,6 +49,7 @@ namespace LastMinutes.Services
 
         public async Task<(string trackName, string artistName, int durationMs)> SearchForTrack(string trackName, string artistName)
         {
+            await Task.Delay(150);
             HttpClient httpClient = new HttpClient();
 
             string encodedTrackName = Uri.EscapeDataString(CleanSongName(Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(trackName))));
@@ -56,7 +57,7 @@ namespace LastMinutes.Services
                 
 
             //string searchUrl = $"{DeezerApiUrl}/search?q=artist:\"{encodedArtistName}\"track:\"{encodedTrackName}\"&limit=30";
-            string searchUrl = $"{DeezerApiUrl}/search/track?q=\"{encodedTrackName} {encodedArtistName}\"&limit=30";
+            string searchUrl = $"{DeezerApiUrl}/search/track?q=\"{encodedTrackName} {encodedArtistName}\"&limit=20";
 
             try
             {
@@ -180,9 +181,9 @@ namespace LastMinutes.Services
                 var (t, a, ms) = await SearchForTrack(ScrobbleIn.TrackName, ScrobbleIn.ArtistName);
                 int retries = 0;
                 // If the rate limit is hit, run the track request that hit it one more time so that no track is excluded.
-                while (t == "UnknownResponseError" && a == "ErrorException" && retries <= 5)
+                while (t == "UnknownResponseError" && a == "ErrorException" && retries <= 2)
                 {
-                    _logger.LogError("[Deezer] 'UnknownResponseError' for track {TrackName} by {ArtistName}. Retrying {Retries}/5", ScrobbleIn.TrackName, ScrobbleIn.ArtistName, retries);
+                    _logger.LogError("[Deezer] 'UnknownResponseError' for track {TrackName} by {ArtistName}. Retrying {Retries}/2", ScrobbleIn.TrackName, ScrobbleIn.ArtistName, retries);
                     retries++;
                     await Task.Delay(TimeSpan.FromSeconds(5));
                     (t, a, ms) = await SearchForTrack(ScrobbleIn.TrackName, ScrobbleIn.ArtistName);

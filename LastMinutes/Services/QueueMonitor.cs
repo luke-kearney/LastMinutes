@@ -300,7 +300,52 @@ namespace LastMinutes.Services
                 await UpdateStatus(item, $"Finding cached tracks...");
                 _logger.LogInformation("[Queue] Searching the cache for any unfound durations.");
 
-                List<Tracks> AllCached = await lmdata.Tracks.ToListAsync();
+                
+                // Build a distinct set of keys from UnfoundScrobbles
+                var scrobbleKeys = UnfoundScrobbles
+                    .Select(s => new TrackKey(s.TrackName, s.ArtistName))
+                    .Distinct()
+                    .ToList();
+
+                var tracks = await lmdata.Tracks
+                    .ToListAsync();
+
+                var trackMatches = tracks
+                    .Where(t => scrobbleKeys
+                        .Any(k => string.Equals(t.Name, k.Name, StringComparison.OrdinalIgnoreCase) &&
+                                  string.Equals(t.Artist, k.Artist, StringComparison.OrdinalIgnoreCase)))
+                    .ToDictionary(
+                        t => new TrackKey(t.Name, t.Artist),
+                        t => t);
+
+                // Process the scrobbles
+                foreach (var searchFor in UnfoundScrobbles)
+                {
+                    var key = new TrackKey(searchFor.TrackName, searchFor.ArtistName);
+                    if (trackMatches.TryGetValue(key, out var found))
+                    {
+                        ProcessedScrobbles.Add(new Scrobble
+                        {
+                            TrackName = searchFor.TrackName,
+                            ArtistName = searchFor.ArtistName,
+                            Count = searchFor.Count,
+                            Runtime = found.Runtime,
+                            TotalRuntime = found.Runtime * searchFor.Count
+                        });
+                    }
+                    else
+                    {
+                        UncachedScrobbles.Add(new Scrobble
+                        {
+                            TrackName = searchFor.TrackName,
+                            ArtistName = searchFor.ArtistName,
+                            Count = searchFor.Count
+                        });
+                    }
+                }
+
+                
+                /*List<Tracks> AllCached = await lmdata.Tracks.ToListAsync();
 
 
                 foreach (Scrobble SearchFor in UnfoundScrobbles)
@@ -329,7 +374,7 @@ namespace LastMinutes.Services
                             Count = SearchFor.Count
                         });
                     }
-                }
+                }*/
 
                 _logger.LogInformation("[Queue] Cache search completed. Found {FoundCache} tracks. There are {Unfound} tracks that need to be searched!", ProcessedScrobbles.Count, UncachedScrobbles.Count);
 
@@ -406,7 +451,7 @@ namespace LastMinutes.Services
                 #region Spotify
 
                 // Get the auth token
-                string SpotifyAuthToken = await _spotify.GetAccessToken();
+                /*string SpotifyAuthToken = await _spotify.GetAccessToken();
                 int count = 0;
                 bool SpotifySearchEnabled = true;
                 while (SpotifyAuthToken == "tokenfailure" && count <= 4)
@@ -451,7 +496,7 @@ namespace LastMinutes.Services
                     }
 
                     _logger.LogInformation("[Queue] Search on Spotify has completed. Remaining uncached tracks: {Remaining}", UncachedScrobbles.Count());
-                }
+                }*/
                 
 
                 #endregion
@@ -791,4 +836,32 @@ namespace LastMinutes.Services
 
 
     }
+    
+    public class TrackKey
+    {
+        public string Name { get; set; }
+        public string Artist { get; set; }
+
+        public TrackKey(string name, string artist)
+        {
+            Name = name.ToLowerInvariant(); // Normalize for case-insensitive comparison
+            Artist = artist.ToLowerInvariant();
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is TrackKey other &&
+                   Name == other.Name &&
+                   Artist == other.Artist;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Name, Artist);
+        }
+    }
+    
+
+
+    
 }

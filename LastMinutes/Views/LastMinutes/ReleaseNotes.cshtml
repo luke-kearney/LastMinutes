@@ -22,7 +22,19 @@
     <div class="p-2 px-1 text-white">
 
         <div class="row my-4">
-            <h5>Beta11101</h5>
+            <h5>Beta11205 - 12/05/2024</h5>
+            <p>For some reason, LastMinutes is under extremely high demand (compared to normal), I presume this is because Spotify Wrapped has just released. With about 30 users per hour, LastMinutes was being rate limited by the Spotify API and put into a cooldown of many many hours. When a cooldown like this occurs, the entire queue freezes until the cooldown is over, this is something I may change in the future.</p>
+            <span>
+                <ul>
+                    <li>Disabled Spotify track duration searching due to rate limiting.</li>
+                    <li>Slowed down Deezer track duration searching to prevent hitting a rate limit.</li>
+                    <li>Improved track cache search performance.</li>
+                </ul>
+            </span>
+        </div>
+
+        <div class="row my-4">
+            <h5>Beta11101 11/10/2024</h5>
             <p>LastMinutes stopped working again, however this time I was able to figure out what the issue was. The queue would continuously attempt to process a username which does not exist on Last.FM.</p>
             <span>
                 <ul>

@@ -39,7 +39,7 @@
     <h1><a asp-action="Index" asp-controller="LastMinutes" class="text-decoration-none link-light" onmouseover="this.style.color='gold'" onmouseout="this.style.color='white'">LastMinutes</a></h1>
 </div>
 
-<div class="col col-md-8 d-flex justify-content-center mt-0 mb-auto">
+<div class="col col-md-10 col-xl-8 d-flex justify-content-center mt-0 mb-auto">
 
 
     <div class="col-12 col-lg-6 p-2 text-white">
@@ -63,13 +63,13 @@
                         <div class="col col-md-6 my-2">
 
                             <select class="form-select form-select-sm" asp-for="Mode" aria-label="Over Time" onchange="UpdateLeaderboardSwitch()" id="TimeFrameSelect">
-                                <option value="1">Over All Time</option>
+                                <option value="1" disabled="">Over All Time</option>
                                 <option value="2">Over The Last Week</option>
                                 <option value="3" selected>Over The Last Month</option>
-                                <option value="4">Over The Last Year</option>
+                                <option value="4" disabled="">Over The Last Year</option>
                                 <option value="5">This Week</option>
                                 <option value="6">This Month</option>
-                                <option value="7">This Year</option>
+                                <option value="7" disabled>This Year</option>
                             </select>
 
                         </div>
@@ -114,6 +114,11 @@
 
             </form>
 
+            
+            <p>
+                <b>Unfortunately, due to unprecedented high demand, I have had to disable the "All Time", "This Year" and "Past Year" modes.<br/><br/> I will re-enable these modes in a few days once demand falls.</b>
+            </p> 
+            
         </div>
         
 

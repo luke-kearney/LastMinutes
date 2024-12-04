@@ -268,10 +268,13 @@ namespace LastMinutes.Services
             else if (queueLength >= 10 && queueLength < 20)
             {
                 return "quite busy";
+            } else if (queueLength >= 20 && queueLength < 100)
+            {
+                return "abnormally busy";
             }
             else
             {
-                return "very busy";
+                return "extremely busy, something must be broken";
             }
         }
 
