@@ -408,11 +408,11 @@ namespace LastMinutes.Controllers
                 mode = 3;
             }
 
-            var excludeModes = new List<int>() { 1, 4, 7 };
-            if (excludeModes.Contains(mode))
-            {
-                mode = 3;
-            }
+            // var excludeModes = new List<int>() { 1, 4, 7 };
+            // if (excludeModes.Contains(mode))
+            // {
+            //     mode = 3;
+            // }
             
 
             

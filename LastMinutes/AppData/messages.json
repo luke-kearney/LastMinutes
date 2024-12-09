@@ -1,7 +1,7 @@
 {
   "PendingShowMessage": true,
-  "PendingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">LastMinutes is under high demand!</a>",
+  "PendingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">Welcome!</a>",
 
   "LandingShowMessage": true,
-  "LandingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">Currently under high demand!</a><br>Queue has been reset and should continue as normal, welcome!"
+  "LandingMessage": "<a href=\"/release-notes\" class=\"link-secondary fw-bold text-decoration-none goldhover\">Long term modes restored!"
 }
