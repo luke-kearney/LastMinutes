@@ -53,9 +53,9 @@ namespace LastMinutes.Services
                 try
                 {
                     await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-                    await CheckDatabase();
-                    await ClearOldResults();
-                    await ClearOldLeaderboardEntries();
+                    //await CheckDatabase();
+                    //await ClearOldResults();
+                    //await ClearOldLeaderboardEntries();
                 } catch (Exception e)
                 {
                     _logger.LogError(e, "QueueMonitor.cs Experienced a critical fault and the background service has stopped! Restarting service in 30 seconds...");

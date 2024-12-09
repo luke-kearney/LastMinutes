@@ -1,18 +1,46 @@
-﻿<!DOCTYPE html>
+﻿@using LastMinutes.Models.Shared
+@{
+    var LayoutModel = ViewData["LayoutModel"] as LayoutViewModel;
+    if (LayoutModel == null)
+    {
+        <html>
+        <head><title>Error</title></head>
+        <body><h1>An error occurred. Layout view model is empty!</h1></body>
+        @{
+        RenderBody();
+        }
+        </html>
+        return;
+    }
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>@ViewData["Title"] - LastMinutes</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/LastMinutes.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/LastMinutes.styles.css" asp-append-version="true"/>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        main {
+            flex: 1;
+        }
+    </style>
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">LastMinutes</a>
+                <img src="/img/HeaderLogoNewNoSubtext.png" class="img-fluid" style="max-width: 175px"/>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -27,10 +55,35 @@
                         </li>
                     </ul>
                 </div>
+
+                <div class="col-2 d-flex justify-content-end">
+                    @if (LayoutModel.SignedIn)
+                    {
+                        <div class="dropdown">
+                            <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                                @LayoutModel.Name
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton1">
+                                <li><a class="dropdown-item" href="#">Action</a></li>
+                                <li><a class="dropdown-item" href="#">Another action</a></li>
+                                <li><a class="dropdown-item" href="#">Something else here</a></li>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="dropdown">
+                            <button class="btn btn-primary" type="button" id="dropdownMenuButton1" aria-expanded="false">
+                                Sign in
+                            </button>
+                        </div>
+                    }
+                    
+                </div>
             </div>
         </nav>
     </header>
-    <div class="container">
+    <div class="container flex-grow-1">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
@@ -46,4 +99,6 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
+
 </html>
